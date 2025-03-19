@@ -1,0 +1,245 @@
+/**
+ * Main initialization on DOM content loaded
+ * Sets up season tabs and handles responsive video container sizing
+ */
+console.log("loading scripts...");
+
+window.addEventListener("DOMContentLoaded", () => {
+  // Season Defaults
+  $(".season-tab_link").eq(0).addClass("is-season-1");
+  $(".season-tab_link").eq(1).addClass("is-season-2");
+
+  // Handle responsive video container sizing
+  jQuery(function () {
+    adjustVideoContainerSizes();
+  });
+
+  // Re-adjust sizes on window resize
+  jQuery(window).on("resize", function () {
+    adjustVideoContainerSizes();
+  });
+});
+
+/**
+ * Adjusts video container sizes based on viewport width
+ */
+function adjustVideoContainerSizes() {
+  if (jQuery(window).width() >= 1440) {
+    // Large screens - fixed height
+    let maxHeight = 593.25;
+    jQuery(".player-content").each(function () {
+      jQuery(this).css("height", maxHeight + "px");
+      jQuery(".player-menu_list").css("height", maxHeight + "px");
+    });
+  } else if (jQuery(window).width() >= 992 && jQuery(window).width() <= 1439) {
+    // Medium screens - dynamic height based on video
+    let videoHeight = jQuery(".player-item.active .player-content").find("video").height();
+
+    // If video height is 0, use a default height
+    if (!videoHeight || videoHeight < 10) {
+      videoHeight = 400;
+    }
+
+    jQuery(".player-content").each(function () {
+      jQuery(this).css("height", "auto");
+      jQuery(this).css("min-height", videoHeight + "px");
+      jQuery(".player-menu_list").css("height", videoHeight + "px");
+    });
+  } else {
+    // Small screens - auto height
+    jQuery(".player-content").each(function () {
+      jQuery(this).css("min-height", "auto");
+      jQuery(".player-menu_list").css("height", "auto");
+    });
+  }
+}
+
+//This function loads all scripts needed for this page to work after they have been nested into the page.
+window.fsAttributes = window.fsAttributes || [];
+window.fsAttributes.push([
+  "cmsnest",
+  (nestInstances) => {
+    /**
+     * Sequential script loader
+     * Loads scripts in order to ensure dependencies are met
+     */
+    (function () {
+      // Get the base URL for the scripts (current script's directory)
+      let scripts = document.getElementsByTagName("script");
+      let currentScript = scripts[scripts.length - 1];
+      let baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
+
+      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls.js"];
+
+      /**
+       * Recursively loads scripts in sequence
+       * Each script waits for the previous one to load before executing
+       */
+      const loadScripts = function () {
+        if (scriptFiles.length > 0) {
+          let nextLib = scriptFiles.shift();
+          let headTag = document.getElementsByTagName("head")[0];
+          let scriptTag = document.createElement("script");
+
+          scriptTag.src = nextLib;
+          scriptTag.onload = function (e) {
+            // Load the next script after this one is loaded
+            loadScripts();
+
+            // If this is the tabs script, initialize tabs immediately
+            if (e.target.src.indexOf("tabs-original.js") > -1) {
+              // Force adjustVideoContainerSizes to run after tabs are loaded
+              setTimeout(function () {
+                adjustVideoContainerSizes();
+              }, 300);
+            }
+          };
+
+          // Handle script load errors
+          scriptTag.onerror = function (e) {
+            // If tabs script fails to load, include its functionality inline
+            if (e.target.src.indexOf("tabs-original.js") > -1) {
+              initializeTabsFunctionality();
+            }
+
+            // Continue loading other scripts even if one fails
+            loadScripts();
+          };
+
+          headTag.appendChild(scriptTag);
+        }
+      };
+
+      /**
+       * Fallback tabs functionality if the tabs script fails to load
+       */
+      function initializeTabsFunctionality() {
+        jQuery(function ($) {
+          // Tab Buttons
+          $(".season-tab_link").on("click", function () {
+            $(".season-tab_link").attr("data-tab", "");
+            $(this).attr("data-tab", "current");
+          });
+
+          // Tab Functions
+          $(".season-tab_link").on("click", function () {
+            // Tabs
+            let current = $(".season-tab_content-panel.active");
+            if ($(this).attr("id") === "nextBtn") {
+              $(".season-tab_content-panel.active").next(".season-tab_content-panel").addClass("active");
+            } else {
+              // Active pevious tab
+              $(".season-tab_content-panel.active").prev(".season-tab_content-panel").addClass("active");
+            }
+            if ($(".season-tab_content-panel.active").length > 1) {
+              // Remove original active tab
+              current.removeClass("active");
+
+              // Player Item
+              $(".player-item").removeClass("active");
+              // Chapter
+              $(".chapter").removeClass("active");
+              $(".chapter-item").removeClass("active");
+              // Update footer
+              updateTab();
+            }
+          });
+
+          // Update Tab function
+          function updateTab() {
+            // Get current active tab
+            let tab = $(".season-tab_content-panel"),
+              current = tab.filter(".active");
+            let getIndex = current.index();
+
+            if (current) {
+              if (getIndex === 0) {
+                $("#heroBtn").text("Season 1");
+              } else {
+                $("#heroBtn").text("Season 2");
+              }
+              // Pause video
+              $(".player-item video").each(function () {
+                $(this).get(0).pause();
+              });
+              // Add class to first player-item
+              current.find(".player-item").first().addClass("active");
+              current.find(".chapter").first().addClass("active");
+              current.find(".chapter-item").first().addClass("active");
+            }
+          }
+
+          // Initialize first tab
+          if (!$(".season-tab_content-panel").hasClass("active")) {
+            $(".season-tab_content-panel").first().addClass("active");
+          }
+          updateTab();
+
+          // CHANGE HERO VIDEO SOURCE
+          $(".season-tab_link").on("click", function (event) {
+            let change = $(this).attr("data-source");
+            if (change && $(".hero-video").length) {
+              $(".hero-video")[0].pause();
+              $(".hero-video").attr("src", change);
+              $(".hero-video")[0].load();
+              $(".hero-video")[0].play();
+            }
+          });
+
+          // Force adjustVideoContainerSizes to run
+          setTimeout(function () {
+            adjustVideoContainerSizes();
+          }, 300);
+        });
+      }
+
+      // Start loading scripts
+      loadScripts();
+    })();
+
+    $(".nested-collections-data").remove(); //Nested data gets removed from the DOM once it has been loaded.
+  },
+]);
+
+/**
+ * Browser and device detection
+ * Adds appropriate classes to the HTML element for CSS targeting
+ */
+jQuery(document).ready(function ($) {
+  // Detect iOS devices
+  function detectIOS() {
+    const deviceAgent = navigator.userAgent.toLowerCase();
+    return deviceAgent.match(/(iphone|ipod|ipad)/) || (navigator.userAgent.includes("Mac") && "ontouchend" in document); // iPad on iOS 13+
+  }
+
+  // Detect mobile devices
+  function detectMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  // Add device classes
+  if (detectIOS()) {
+    $("html").addClass("ios");
+  }
+
+  if (detectMobile()) {
+    $("html").addClass("mobile");
+  }
+
+  // Add browser classes
+  const ua = navigator.userAgent;
+
+  if (ua.search("MSIE") >= 0 || ua.search("Trident") >= 0) {
+    $("html").addClass("ie");
+  } else if (ua.search("Chrome") >= 0 && ua.search("Edge") < 0) {
+    $("html").addClass("chrome");
+  } else if (ua.search("Firefox") >= 0) {
+    $("html").addClass("firefox");
+  } else if (ua.search("Safari") >= 0 && ua.search("Chrome") < 0) {
+    $("html").addClass("safari");
+  } else if (ua.search("Opera") >= 0 || ua.search("OPR") >= 0) {
+    $("html").addClass("opera");
+  } else if (ua.search("Edge") >= 0) {
+    $("html").addClass("edge");
+  }
+});
