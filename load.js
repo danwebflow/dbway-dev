@@ -2,7 +2,6 @@
  * Main initialization on DOM content loaded
  * Sets up season tabs and handles responsive video container sizing
  */
-console.log("github updated...");
 console.log("loading scripts...");
 
 window.addEventListener("DOMContentLoaded", () => {
