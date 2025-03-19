@@ -2,6 +2,7 @@
  * Main initialization on DOM content loaded
  * Sets up season tabs and handles responsive video container sizing
  */
+console.log("github updated...");
 console.log("loading scripts...");
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -87,7 +88,7 @@ window.fsAttributes.push([
             loadScripts();
 
             // If this is the tabs script, initialize tabs immediately
-            if (e.target.src.indexOf("tabs-original.js") > -1) {
+            if (e.target.src.indexOf("tabs.js") > -1) {
               // Force adjustVideoContainerSizes to run after tabs are loaded
               setTimeout(function () {
                 adjustVideoContainerSizes();
@@ -98,7 +99,7 @@ window.fsAttributes.push([
           // Handle script load errors
           scriptTag.onerror = function (e) {
             // If tabs script fails to load, include its functionality inline
-            if (e.target.src.indexOf("tabs-original.js") > -1) {
+            if (e.target.src.indexOf("tabs.js") > -1) {
               initializeTabsFunctionality();
             }
 
