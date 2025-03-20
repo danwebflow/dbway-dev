@@ -8,6 +8,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Season Defaults
   $(".season-tab_link").eq(0).addClass("is-season-1");
   $(".season-tab_link").eq(1).addClass("is-season-2");
+  $(".season-tab_link").eq(2).addClass("is-season-3");
 
   // Handle responsive video container sizing
   jQuery(function () {
