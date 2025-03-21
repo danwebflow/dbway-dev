@@ -21,6 +21,46 @@ if (debugSeasonNav) {
   );
 }
 
+// Global variables for fullscreen functionality
+let fullscreenActive = false;
+
+// Fullscreen Spacebar prevent default function
+document.addEventListener("keyup", (event) => {
+  if (event.code === "Space") {
+    event.preventDefault();
+  }
+});
+
+// Fullscreen scroll
+function scrollFullscreenClose() {
+  setTimeout(function () {
+    var target = $("#tab-anchor");
+    if (target.length) {
+      $("html, body").animate({ scrollTop: target.offset().top }, 300);
+      return false;
+    }
+  }, 500);
+}
+
+// Close fullscreen function
+function closeFullscreen() {
+  if (document.exitFullscreen) {
+    scrollFullscreenClose();
+    document.exitFullscreen();
+    fullscreenActive = false;
+  } else if (document.webkitExitFullscreen) {
+    /* Safari */
+    scrollFullscreenClose();
+    document.webkitExitFullscreen();
+    fullscreenActive = false;
+  } else if (document.msExitFullscreen) {
+    /* IE11 */
+    scrollFullscreenClose();
+    document.msExitFullscreen();
+    fullscreenActive = false;
+  }
+}
+
 jQuery(document).ready(function ($) {
   // Initialize video controls
   console.log("controls.js loaded");
@@ -60,6 +100,9 @@ jQuery(document).ready(function ($) {
 
     // Add event listeners for season navigation
     initSeasonNavigation();
+
+    // Initialize the actual video player controls
+    initializePlayerControls();
   }
 
   // Initialize season navigation controls
@@ -252,8 +295,416 @@ jQuery(document).ready(function ($) {
     }
   }
 
-  // Initialize controls
-  initVideoControls();
+  // Initialize the actual video player controls
+  function initializePlayerControls() {
+    // Initialize RangeTouch for better range input handling on touch devices
+    const ranges = RangeTouch ? RangeTouch.setup('input[type="range"]', { thumbWidth: "16" }) : null;
+
+    // Process each player item
+    $(".player-item").each(function() {
+      var player = this;
+      const body = document.body;
+
+      // Find the video wrapper - try both by ID and by closest parent
+      var videoWrapper = player.closest(".season-tab_content-panel") || player.parentElement;
+      var video = player.querySelector("video");
+
+      // Skip if no video found
+      if (!video) return;
+
+      var videoControls = player.querySelector(".video-controls");
+      var videoTap = player.querySelector(".video-tap");
+      var playButton = player.querySelector(".play-button");
+      var playbackIcons = player.querySelectorAll(".playback-icons use");
+      var timeElapsed = player.querySelector(".time-elapsed");
+      var duration = player.querySelector(".duration");
+      var progressBar = player.querySelector(".progress-bar");
+      var seek = player.querySelector(".seek");
+      var volumeButton = player.querySelector(".volume-button");
+      var volumeIcons = player.querySelectorAll(".volume-button use");
+      var volumeMute = player.querySelector('use[href="#volume-mute"]');
+      var volumeLow = player.querySelector('use[href="#volume-low"]');
+      var volumeHigh = player.querySelector('use[href="#volume-high"]');
+      var volume = player.querySelector(".volume");
+      var playbackAnimation = player.querySelector(".playback-animation");
+      var fullscreenButton = player.querySelector(".fullscreen-button");
+      var fullscreenIcons = fullscreenButton ? fullscreenButton.querySelectorAll("use") : null;
+
+      // Check if video is supported
+      var videoWorks = !!document.createElement("video").canPlayType;
+      if (videoWorks && videoControls) {
+        video.controls = false;
+        videoControls.classList.remove("hidden");
+      }
+
+      // Auto-mute if debug mode is active
+      if (debugMode && video) {
+        video.muted = true;
+      }
+
+      // Variable to store timeout for controls hiding
+      let controlsTimeout;
+
+      // PLAY
+      function togglePlay() {
+        if (!video) return;
+
+        if (video.paused || video.ended) {
+          video.play();
+          if (videoTap) videoTap.classList.remove("hide");
+        } else {
+          video.pause();
+        }
+      }
+
+      // PLAY ICON
+      function updatePlayButton() {
+        if (playbackIcons) {
+          playbackIcons.forEach((icon) => icon.classList.toggle("hidden"));
+        }
+
+        if (playButton) {
+          if (video.paused) {
+            playButton.classList.remove("is-playing");
+          } else {
+            playButton.classList.add("is-playing");
+          }
+        }
+      }
+
+      // TIME
+      function formatTime(timeInSeconds) {
+        const result = new Date(timeInSeconds * 1000).toISOString().substr(11, 8);
+
+        return {
+          minutes: result.substr(3, 2),
+          seconds: result.substr(6, 2)
+        };
+      }
+
+      // PROGRESS
+      function initializeVideo() {
+        if (!video) return;
+
+        const videoDuration = Math.round(video.duration);
+        if (seek) seek.setAttribute("max", videoDuration);
+        if (progressBar) progressBar.setAttribute("max", videoDuration);
+
+        const time = formatTime(videoDuration);
+        if (duration) {
+          duration.innerText = `${time.minutes}:${time.seconds}`;
+          duration.setAttribute("datetime", `${time.minutes}m ${time.seconds}s`);
+        }
+
+        // Initialize volume slider
+        if (volume) {
+          volumeSlider();
+        }
+      }
+
+      // ELAPSED TIME
+      function updateTimeElapsed() {
+        if (!video || !timeElapsed) return;
+
+        const time = formatTime(Math.round(video.currentTime));
+        timeElapsed.innerText = `${time.minutes}:${time.seconds}`;
+        timeElapsed.setAttribute("datetime", `${time.minutes}m ${time.seconds}s`);
+      }
+
+      // UPDATE PROGRESS
+      function updateProgress() {
+        if (!video) return;
+
+        if (seek) seek.value = Math.floor(video.currentTime);
+        if (progressBar) progressBar.value = Math.floor(video.currentTime);
+      }
+
+      // PROGRESS SKIP
+      function skipAhead(event) {
+        if (!video || !seek || !progressBar) return;
+
+        const skipTo = event.target.dataset.seek ? event.target.dataset.seek : event.target.value;
+        video.currentTime = skipTo;
+        progressBar.value = skipTo;
+        seek.value = skipTo;
+      }
+
+      // VOLUME
+      function updateVolume() {
+        if (!video || !volume) return;
+
+        if (video.muted) {
+          video.muted = false;
+        }
+
+        video.volume = volume.value;
+      }
+
+      // VOLUME ICONS
+      function updateVolumeIcon() {
+        if (!volumeIcons || !volumeMute || !volumeLow || !volumeHigh) return;
+
+        volumeIcons.forEach((icon) => {
+          icon.classList.add("hidden");
+        });
+
+        if (video.muted || video.volume === 0) {
+          volumeMute.classList.remove("hidden");
+        } else if (video.volume > 0 && video.volume <= 0.5) {
+          volumeLow.classList.remove("hidden");
+        } else {
+          volumeHigh.classList.remove("hidden");
+        }
+      }
+
+      // MUTE TOGGLE
+      function toggleMute() {
+        if (!video || !volume) return;
+
+        video.muted = !video.muted;
+
+        if (video.muted) {
+          volume.setAttribute("data-volume", volume.value);
+          volume.value = 0;
+        } else {
+          volume.value = volume.dataset.volume;
+        }
+      }
+
+      // ANIMATE
+      function animatePlayback() {
+        if (!playbackAnimation) return;
+
+        playbackAnimation.animate(
+          [
+            {
+              opacity: 1,
+              transform: "scale(1)"
+            },
+            {
+              opacity: 0,
+              transform: "scale(1.3)"
+            }
+          ],
+          {
+            duration: 500
+          }
+        );
+      }
+
+      // FULLSCREEN
+      function toggleFullScreen() {
+        if (!videoWrapper) return;
+
+        const deviceAgent = navigator.userAgent.toLowerCase();
+        if (deviceAgent.match(/(iphone|ipod|ipad)/)) return;
+
+        if (
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        ) {
+          closeFullscreen();
+          fullscreenActive = false;
+        } else {
+          if (videoWrapper.requestFullscreen) {
+            videoWrapper.requestFullscreen();
+            fullscreenActive = true;
+          } else if (videoWrapper.mozRequestFullScreen) {
+            videoWrapper.mozRequestFullScreen();
+            fullscreenActive = true;
+          } else if (videoWrapper.webkitRequestFullscreen) {
+            videoWrapper.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            fullscreenActive = true;
+          }
+        }
+      }
+
+      // FULLSCREEN ICON
+      function updateFullscreenButton() {
+        if (!fullscreenIcons) return;
+
+        fullscreenIcons.forEach((icon) => icon.classList.toggle("hidden"));
+        body.classList.toggle("fullscreen");
+      }
+
+      // HIDE CONTROLS
+      function hideControls() {
+        if (!videoControls || !videoTap) return;
+
+        if (video.paused) {
+          showControls();
+          return;
+        }
+
+        videoControls.classList.add("hide");
+        videoTap.classList.remove("hide");
+      }
+
+      // SHOW CONTROLS
+      function showControls() {
+        if (!videoControls || !videoTap) return;
+
+        videoControls.classList.remove("hide");
+        videoTap.classList.add("hide");
+      }
+
+      // VOLUME SLIDER
+      function volumeSlider() {
+        if (!volume) return;
+
+        var value = ((volume.value - volume.min) / (volume.max - volume.min)) * 100;
+
+        // Get color from data-gradient attribute or use default pink
+        var color = $(volume).attr("data-gradient") || "#EF9EA7";
+
+        volume.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${value}%, #fff ${value}%, white 100%)`;
+      }
+
+      // KEYBOARD SHORTCUTS
+      function keyboardShortcuts(event) {
+        if (!video) return;
+
+        const { key } = event;
+        switch (key) {
+          case " ":
+            if (fullscreenActive && video.paused) {
+              video.play();
+              if (videoTap) videoTap.classList.remove("hide");
+            } else if (fullscreenActive && !video.paused) {
+              video.pause();
+              if (videoTap) videoTap.classList.add("hide");
+            }
+            break;
+          case "m":
+            toggleMute();
+            break;
+        }
+      }
+
+      // Add event listeners if elements exist
+      if (playButton) {
+        playButton.addEventListener("click", togglePlay);
+      }
+
+      if (videoTap) {
+        videoTap.addEventListener("click", function() {
+          togglePlay();
+          showControls();
+        });
+      }
+
+      if (video) {
+        video.addEventListener("play", updatePlayButton);
+        video.addEventListener("pause", updatePlayButton);
+        video.addEventListener("loadedmetadata", initializeVideo);
+        video.addEventListener("timeupdate", updateTimeElapsed);
+        video.addEventListener("timeupdate", updateProgress);
+        video.addEventListener("volumechange", updateVolumeIcon);
+
+        video.addEventListener("click", function() {
+          togglePlay();
+          animatePlayback();
+        });
+
+        video.addEventListener("play", function() {
+          setTimeout(() => {
+            hideControls();
+          }, 500);
+        });
+
+        video.addEventListener("pause", function() {
+          setTimeout(() => {
+            showControls();
+          }, 500);
+        });
+
+        video.onwaiting = function() {
+          body.classList.add("buffering");
+        };
+
+        video.onplaying = function() {
+          body.classList.remove("buffering");
+        };
+      }
+
+      // Add hover behavior for controls
+      if (videoControls) {
+        videoControls.addEventListener("mouseenter", function() {
+          clearTimeout(controlsTimeout);
+          showControls();
+        });
+
+        videoControls.addEventListener("mouseleave", function() {
+          if (video && !video.paused) {
+            hideControls();
+          }
+        });
+      }
+
+      if (seek) {
+        seek.addEventListener("input", skipAhead);
+      }
+
+      if (volume) {
+        volume.addEventListener("input", function() {
+          updateVolume();
+          volumeSlider();
+        });
+      }
+
+      if (volumeButton) {
+        volumeButton.addEventListener("click", toggleMute);
+      }
+
+      if (fullscreenButton) {
+        fullscreenButton.addEventListener("click", toggleFullScreen);
+      }
+
+      if (videoWrapper) {
+        videoWrapper.addEventListener("fullscreenchange", updateFullscreenButton);
+        videoWrapper.addEventListener("mozfullscreenchange", updateFullscreenButton);
+        videoWrapper.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+        videoWrapper.addEventListener("msfullscreenchange", updateFullscreenButton);
+      }
+
+      // iOS specific handling
+      if (video) {
+        const deviceAgent = navigator.userAgent.toLowerCase();
+        if (deviceAgent.match(/(iphone|ipod|ipad)/)) {
+          video.addEventListener("webkitbeginfullscreen", function() {
+            body.classList.add("fsios");
+          });
+
+          video.addEventListener("webkitendfullscreen", function() {
+            video.pause();
+            body.classList.remove("fsios");
+          });
+
+          if (fullscreenButton) {
+            fullscreenButton.addEventListener("touchstart", function() {
+              let time = window.setInterval(function() {
+                try {
+                  video.webkitEnterFullscreen();
+                } catch (e) {}
+              }, 250);
+
+              video.play();
+
+              // Clear interval after a short time
+              setTimeout(function() {
+                clearInterval(time);
+              }, 1000);
+            });
+          }
+        }
+      }
+
+      // Global keyboard shortcuts
+      document.addEventListener("keyup", keyboardShortcuts);
+    });
+  }
 
   // Function to check and fix season navigation buttons
   function checkAndFixSeasonNavButtons() {
@@ -300,6 +751,9 @@ jQuery(document).ready(function ($) {
     }
   }
 
+  // Initialize controls
+  initVideoControls();
+
   // Make sure season navigation is initialized even if no videos are present
   initSeasonNavigation();
 
@@ -317,6 +771,7 @@ jQuery(document).ready(function ($) {
   // Also initialize on document ready to ensure it runs after Webflow's own initialization
   $(window).on("load", function() {
     if (debugSeasonNav) console.log("Window load event - reinitializing season navigation");
+    initVideoControls();
     initSeasonNavigation();
     setTimeout(checkAndFixSeasonNavButtons, 500);
   });

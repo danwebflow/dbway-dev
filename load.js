@@ -70,7 +70,7 @@ window.fsAttributes.push([
       let currentScript = scripts[scripts.length - 1];
       let baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
 
-      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls.js"];
+      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls-new.js"];
 
       /**
        * Recursively loads scripts in sequence
@@ -156,9 +156,11 @@ window.fsAttributes.push([
 
             if (current) {
               if (getIndex === 0) {
-                $("#heroBtn").text("Season 1");
-              } else {
-                $("#heroBtn").text("Season 2");
+                $("#heroBtn").text("Play Season 1");
+              } else if (getIndex === 1) {
+                $("#heroBtn").text("Play Season 2");
+              } else if (getIndex === 2) {
+                $("#heroBtn").text("Play Season 3");
               }
               // Pause video
               $(".player-item video").each(function () {
