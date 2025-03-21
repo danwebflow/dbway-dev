@@ -42,17 +42,16 @@ $(".season-tab_link").on("click", function () {
 
 // Tab Functions
 $(".season-tab_link").on("click", function () {
-  // Tabs
-  let current = $(".season-tab_content-panel.active");
-  if ($(this).attr("id") === "nextBtn") {
-    $(".season-tab_content-panel.active").next(".season-tab_content-panel").addClass("active");
-  } else {
-    // Active pevious tab
-    $(".season-tab_content-panel.active").prev(".season-tab_content-panel").addClass("active");
-  }
-  if ($(".season-tab_content-panel.active").length > 1) {
-    // Remove original active tab
-    current.removeClass("active");
+  // Get the season number from the class (is-season-X)
+  let seasonClass = $(this).attr("class").match(/is-season-(\d+)/);
+  if (seasonClass && seasonClass[1]) {
+    let seasonNumber = seasonClass[1];
+
+    // Remove active class from all panels
+    $(".season-tab_content-panel").removeClass("active");
+
+    // Add active class to the corresponding panel using data attribute
+    $(`.season-tab_content-panel[data-season-${seasonNumber}]`).addClass("active");
 
     // Player Item
     $(".player-item").removeClass("active");
@@ -125,6 +124,12 @@ function updateTab() {
     current.find(".chapter").first().addClass("active");
     current.find(".chapter-item").first().addClass("active");
   }
+}
+
+// Initialize Season 3 as the active tab by default
+if (!$(".season-tab_content-panel").hasClass("active")) {
+  $(".season-tab_content-panel[data-season-3]").addClass("active");
+  $(".season-tab_link.is-season-3").attr("data-tab", "current");
 }
 
 updateTab();

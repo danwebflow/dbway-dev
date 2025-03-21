@@ -147,8 +147,15 @@ function videoplay(videoID) {
 
   // If not found in active panel, try all player containers
   if (video.length === 0) {
-    // Try season containers with new format
-    var currentSeason = activePanel.index() + 1;
+    // Get the season number from the data attribute
+    var currentSeason = 1;
+    if (activePanel.attr('data-season-1') !== undefined) {
+      currentSeason = 1;
+    } else if (activePanel.attr('data-season-2') !== undefined) {
+      currentSeason = 2;
+    } else if (activePanel.attr('data-season-3') !== undefined) {
+      currentSeason = 3;
+    }
     video = jQuery("#season-" + currentSeason).find('[data-video="' + videoID + '"]');
 
     // Try old format containers as fallback
@@ -700,17 +707,21 @@ jQuery(document).ready(function ($) {
         $(".season-tab_link").attr("data-tab", "");
         if (season == 1) {
           $(".season-tab_link.is-season-1").attr("data-tab", "current");
-          $(".season-tab_content-panel").eq(0).addClass("active");
+          $(".season-tab_content-panel").removeClass("active");
+          $(".season-tab_content-panel[data-season-1]").addClass("active");
         } else if (season == 2) {
           $(".season-tab_link.is-season-2").attr("data-tab", "current");
-          $(".season-tab_content-panel").eq(1).addClass("active");
+          $(".season-tab_content-panel").removeClass("active");
+          $(".season-tab_content-panel[data-season-2]").addClass("active");
         } else if (season == 3) {
           $(".season-tab_link.is-season-3").attr("data-tab", "current");
-          $(".season-tab_content-panel").eq(2).addClass("active");
+          $(".season-tab_content-panel").removeClass("active");
+          $(".season-tab_content-panel[data-season-3]").addClass("active");
         } else {
-          // Default to season 1 if season value is invalid
-          $(".season-tab_link.is-season-1").attr("data-tab", "current");
-          $(".season-tab_content-panel").eq(0).addClass("active");
+          // Default to season 3 if season value is invalid
+          $(".season-tab_link.is-season-3").attr("data-tab", "current");
+          $(".season-tab_content-panel").removeClass("active");
+          $(".season-tab_content-panel[data-season-3]").addClass("active");
         }
 
         if (imagesrc) {
@@ -1164,7 +1175,7 @@ $(".share-link-2").on("click", function () {
   }
 
   function getShareUrl() {
-    let season = 1,
+    let season = 3,
       chapter = 1;
     const hash = window.location.hash;
     const seasonMatch = hash.match(/season-(\d+)/);
