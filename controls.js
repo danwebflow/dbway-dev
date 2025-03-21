@@ -1116,7 +1116,8 @@ jQuery(document).ready(function ($) {
           });
 
           // Handle touch interactions for mobile
-          video.addEventListener("touchstart", function () {
+          video.addEventListener("touchstart", function (e) {
+            // Toggle controls visibility on touch
             if (videoControls.classList.contains("hide")) {
               showControls();
 
@@ -1294,16 +1295,34 @@ jQuery(document).ready(function ($) {
         }
 
         // EVENT LISTENERS
-        playButton.addEventListener("click", togglePlay);
-        videoTap.addEventListener("click", showControls);
+        if (playButton) {
+          playButton.addEventListener("click", function(e) {
+            e.preventDefault();
+            togglePlay();
+          });
+        }
+
+        if (videoTap) {
+          videoTap.addEventListener("click", function(e) {
+            e.preventDefault();
+            togglePlay();
+            showControls();
+          });
+        }
+
         video.addEventListener("play", updatePlayButton);
         video.addEventListener("pause", updatePlayButton);
         video.addEventListener("loadedmetadata", initializeVideo);
         video.addEventListener("timeupdate", updateTimeElapsed);
         video.addEventListener("timeupdate", updateProgress);
         video.addEventListener("volumechange", updateVolumeIcon);
-        video.addEventListener("click", togglePlay);
-        video.addEventListener("click", animatePlayback);
+
+        // Combine click handlers to avoid conflicts
+        video.addEventListener("click", function(e) {
+          e.preventDefault();
+          togglePlay();
+          animatePlayback();
+        });
 
         // Remove conflicting mouseleave event on video that might interfere with controls
         // video.addEventListener("mouseleave", hideControls);
@@ -1311,24 +1330,54 @@ jQuery(document).ready(function ($) {
         // Setup enhanced hover behavior
         setupHoverBehavior();
 
-        // Keep the remaining event listeners
-        videoControls.addEventListener("mouseenter", showControls);
-        videoControls.addEventListener("mouseleave", hideControls);
+        // Keep the remaining event listeners for video controls
+        if (videoControls) {
+          videoControls.addEventListener("mouseenter", function() {
+            clearTimeout(controlsTimeout);
+            showControls();
+          });
 
-        videoControls.addEventListener("mouseenter", showControls);
-        videoControls.addEventListener("mouseleave", hideControls);
+          videoControls.addEventListener("mouseleave", function() {
+            if (!video.paused) {
+              hideControls();
+            }
+          });
+        }
 
-        if (seekTooltip) {
+        if (seekTooltip && seek) {
           seek.addEventListener("mousemove", updateSeekTooltip);
         }
 
-        seek.addEventListener("input", skipAhead);
-        volume.addEventListener("input", updateVolume);
-        volume.addEventListener("input", volumeSlider);
-        volumeButton.addEventListener("click", toggleMute);
+        if (seek) {
+          seek.addEventListener("input", skipAhead);
+          // Add change event for better mobile support
+          seek.addEventListener("change", skipAhead);
+        }
 
-        if (fullscreenButton) {
-          fullscreenButton.addEventListener("click", toggleFullScreen);
+        if (volume) {
+          // Combine volume handlers to avoid conflicts
+          volume.addEventListener("input", function() {
+            updateVolume();
+            volumeSlider();
+          });
+        }
+
+        if (volumeButton) {
+          volumeButton.addEventListener("click", toggleMute);
+        }
+
+        if (fullscreenButton && videoWrapper) {
+          fullscreenButton.addEventListener("click", function(e) {
+            e.preventDefault();
+            toggleFullScreen();
+          });
+
+          // Add fullscreen change event listeners to both document and videoWrapper for better compatibility
+          document.addEventListener("fullscreenchange", updateFullscreenButton);
+          document.addEventListener("mozfullscreenchange", updateFullscreenButton);
+          document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+          document.addEventListener("msfullscreenchange", updateFullscreenButton);
+
           videoWrapper.addEventListener("fullscreenchange", updateFullscreenButton);
           videoWrapper.addEventListener("mozfullscreenchange", updateFullscreenButton);
           videoWrapper.addEventListener("webkitfullscreenchange", updateFullscreenButton);
@@ -1367,7 +1416,10 @@ jQuery(document).ready(function ($) {
             video.pause();
             body.classList.remove("fsios");
           });
-          play.addEventListener("touchstart", function () {
+          play.addEventListener("touchstart", function (e) {
+            // Prevent default behavior to avoid conflicts
+            e.preventDefault();
+
             time = window.setInterval(function () {
               try {
                 video.webkitEnterFullscreen();
