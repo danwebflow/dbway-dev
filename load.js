@@ -125,7 +125,9 @@ window.fsAttributes.push([
           // Tab Functions
           $(".season-tab_link").on("click", function () {
             // Get the season number from the class (is-season-X)
-            let seasonClass = $(this).attr("class").match(/is-season-(\d+)/);
+            let seasonClass = $(this)
+              .attr("class")
+              .match(/is-season-(\d+)/);
             if (seasonClass && seasonClass[1]) {
               let seasonNumber = seasonClass[1];
 

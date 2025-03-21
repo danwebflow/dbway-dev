@@ -155,7 +155,7 @@ function videoplay(videoID) {
     var foundInSeason = 0;
 
     // Check each season panel
-    jQuery(".season-tab_content-panel").each(function(index) {
+    jQuery(".season-tab_content-panel").each(function (index) {
       var seasonPanel = jQuery(this);
       var seasonVideo = seasonPanel.find('.player-item[data-video="' + videoID + '"]');
 
@@ -176,10 +176,10 @@ function videoplay(videoID) {
 
       if (seasonButton.length) {
         // Click the season button to switch seasons
-        seasonButton.trigger('click');
+        seasonButton.trigger("click");
 
         // After season switch, try to play the video again
-        setTimeout(function() {
+        setTimeout(function () {
           videoplay(videoID);
         }, 500);
 
@@ -237,7 +237,7 @@ function videoplay(videoID) {
             console.log("Video play error:", err);
 
             // If autoplay fails, add a play overlay
-            if (typeof DBWayUtils !== 'undefined' && typeof DBWayUtils.addPlayOverlay === 'function') {
+            if (typeof DBWayUtils !== "undefined" && typeof DBWayUtils.addPlayOverlay === "function") {
               DBWayUtils.addPlayOverlay(videoPlr);
             }
           });
@@ -318,10 +318,13 @@ function videoend(videoID) {
 
       // Play the next video
       try {
-        nextVideo.find("video")[0].play().catch(function(err) {
-          console.warn("Could not autoplay next video:", err);
-        });
-      } catch(e) {
+        nextVideo
+          .find("video")[0]
+          .play()
+          .catch(function (err) {
+            console.warn("Could not autoplay next video:", err);
+          });
+      } catch (e) {
         console.error("Error playing next video:", e);
       }
 
@@ -1108,10 +1111,13 @@ function videoprev(videoID) {
 
       // Play the previous video
       try {
-        prevVideo.find("video")[0].play().catch(function(err) {
-          console.warn("Could not autoplay previous video:", err);
-        });
-      } catch(e) {
+        prevVideo
+          .find("video")[0]
+          .play()
+          .catch(function (err) {
+            console.warn("Could not autoplay previous video:", err);
+          });
+      } catch (e) {
         console.error("Error playing previous video:", e);
       }
 
@@ -1131,7 +1137,7 @@ function videoprev(videoID) {
         if ($(".scrollbar").length) {
           $(".scrollbar").animate(
             {
-              scrollTop: $(".scrollbar")[0].scrollHeight
+              scrollTop: $(".scrollbar")[0].scrollHeight,
             },
             50
           );
@@ -1154,7 +1160,7 @@ function videoprev(videoID) {
       jQuery("#prevBtn, .season-prev").trigger("click");
 
       // After navigation, select the last video of the previous season
-      setTimeout(function() {
+      setTimeout(function () {
         var newActivePanel = jQuery(".season-tab_content-panel.active");
         var lastChapter = newActivePanel.find(".chapter").last();
 

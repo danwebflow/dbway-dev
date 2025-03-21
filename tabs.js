@@ -6,32 +6,32 @@
 // Restore the scroll-to-story functionality
 const findStory = document.querySelector("#story-link");
 if (findStory) {
-    findStory.addEventListener("click", (e) => {
-        e.preventDefault();
-        const storyAnchor = $(".season-tab_content-panel.active #story-anchor")[0];
-        if (storyAnchor) {
-            storyAnchor.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-                inline: "nearest",
-            });
-        }
-    });
+  findStory.addEventListener("click", (e) => {
+    e.preventDefault();
+    const storyAnchor = $(".season-tab_content-panel.active #story-anchor")[0];
+    if (storyAnchor) {
+      storyAnchor.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+    }
+  });
 }
 
 const findLink = document.querySelector("#find-button");
 if (findLink) {
-    findLink.addEventListener("click", (e) => {
-        e.preventDefault();
-        const storyAnchor = $(".season-tab_content-panel.active #story-anchor")[0];
-        if (storyAnchor) {
-            storyAnchor.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-                inline: "nearest",
-            });
-        }
-    });
+  findLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    const storyAnchor = $(".season-tab_content-panel.active #story-anchor")[0];
+    if (storyAnchor) {
+      storyAnchor.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+    }
+  });
 }
 
 console.log("tabs.js loaded");
@@ -45,7 +45,9 @@ $(".season-tab_link").on("click", function (e) {
   // Get the season number from the button ID (season-X) or class (is-season-X)
   let seasonNumber = 1; // Default to season 1
   let buttonId = $(this).attr("id");
-  let seasonClass = $(this).attr("class").match(/is-season-(\d+)/);
+  let seasonClass = $(this)
+    .attr("class")
+    .match(/is-season-(\d+)/);
 
   // Check if the button has a season-X ID
   if (buttonId && buttonId.match(/season-(\d+)/)) {
@@ -260,7 +262,7 @@ jQuery(window).on("resize", function () {
 });
 
 // Initialize tabs on page load - optimized for immediate class application
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
   // Apply season classes immediately based on active tab or data attributes
   let seasonNumber = 3; // Default to season 3 as per requirements
   let activePanel = $(".season-tab_content-panel.active");

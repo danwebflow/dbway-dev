@@ -65,7 +65,7 @@ jQuery(document).ready(function ($) {
 
       // Calculate target season index
       let targetIndex;
-      if (direction === 'next') {
+      if (direction === "next") {
         targetIndex = (currentIndex + 1) % totalPanels;
       } else {
         targetIndex = (currentIndex - 1 + totalPanels) % totalPanels;
@@ -79,50 +79,56 @@ jQuery(document).ready(function ($) {
 
       // Click the button to trigger the season change
       if (seasonButton.length) {
-        seasonButton.trigger('click');
+        seasonButton.trigger("click");
       }
     }
 
     // Add event listeners for next/prev buttons
-    $("#nextBtn, .season-next").off('click').on("click", function(e) {
-      e.preventDefault();
-      navigateToSeason('next');
-    });
+    $("#nextBtn, .season-next")
+      .off("click")
+      .on("click", function (e) {
+        e.preventDefault();
+        navigateToSeason("next");
+      });
 
-    $("#prevBtn, .season-prev").off('click').on("click", function(e) {
-      e.preventDefault();
-      navigateToSeason('prev');
-    });
+    $("#prevBtn, .season-prev")
+      .off("click")
+      .on("click", function (e) {
+        e.preventDefault();
+        navigateToSeason("prev");
+      });
 
     // Add keyboard navigation support
-    $(document).off('keydown.seasonNav').on("keydown.seasonNav", function(e) {
-      // Only handle if we're on the seasons page
-      if ($(".season-tab_content-panel").length === 0) return;
+    $(document)
+      .off("keydown.seasonNav")
+      .on("keydown.seasonNav", function (e) {
+        // Only handle if we're on the seasons page
+        if ($(".season-tab_content-panel").length === 0) return;
 
-      // Left arrow key - previous season
-      if (e.keyCode === 37) {
-        navigateToSeason('prev');
-        return false; // Prevent default
-      }
+        // Left arrow key - previous season
+        if (e.keyCode === 37) {
+          navigateToSeason("prev");
+          return false; // Prevent default
+        }
 
-      // Right arrow key - next season
-      if (e.keyCode === 39) {
-        navigateToSeason('next');
-        return false; // Prevent default
-      }
-    });
+        // Right arrow key - next season
+        if (e.keyCode === 39) {
+          navigateToSeason("next");
+          return false; // Prevent default
+        }
+      });
 
     // Add swipe support for touch devices if Hammer.js is available
-    if (typeof Hammer !== 'undefined') {
-      const seasonContainer = document.querySelector('.season-tab_content');
+    if (typeof Hammer !== "undefined") {
+      const seasonContainer = document.querySelector(".season-tab_content");
       if (seasonContainer && !seasonContainer._hammer) {
         const hammer = new Hammer(seasonContainer);
         seasonContainer._hammer = hammer;
-        hammer.on('swipeleft', function() {
-          navigateToSeason('next');
+        hammer.on("swipeleft", function () {
+          navigateToSeason("next");
         });
-        hammer.on('swiperight', function() {
-          navigateToSeason('prev');
+        hammer.on("swiperight", function () {
+          navigateToSeason("prev");
         });
       }
     }
@@ -1049,7 +1055,7 @@ jQuery(document).ready(function ($) {
               element = element.parentElement;
             }
             return false;
-          }, { passive: true }
+          }
 
           // Function to handle mouse movement
           function handleMouseMove(e) {
