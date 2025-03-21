@@ -144,68 +144,25 @@ function videoplay(videoID) {
   // Find the video in the active season tab panel first
   var activePanel = jQuery(".season-tab_content-panel.active");
   var video = activePanel.find('.player-item[data-video="' + videoID + '"]');
-  var currentSeason = activePanel.index() + 1;
 
-  console.log("Current active season:", currentSeason);
-  console.log("Video found in active panel:", video.length > 0);
-
-  // If not found in active panel, check if it's in another season
+  // If not found in active panel, try all player containers
   if (video.length === 0) {
-    // Try to find which season contains this video
-    var foundInSeason = 0;
-
-    // Check each season panel
-    jQuery(".season-tab_content-panel").each(function (index) {
-      var seasonPanel = jQuery(this);
-      var seasonVideo = seasonPanel.find('.player-item[data-video="' + videoID + '"]');
-
-      if (seasonVideo.length > 0) {
-        foundInSeason = index + 1;
-        return false; // Break the loop
-      }
-    });
-
-    console.log("Video found in season:", foundInSeason);
-
-    if (foundInSeason > 0 && foundInSeason !== currentSeason) {
-      // Video is in a different season, switch to that season
-      console.log("Switching to season", foundInSeason);
-
-      // Find the season button
-      var seasonButton = jQuery(`#season-${foundInSeason}, .season-tab_link.is-season-${foundInSeason}`);
-
-      if (seasonButton.length) {
-        // Click the season button to switch seasons
-        seasonButton.trigger("click");
-
-        // After season switch, try to play the video again
-        setTimeout(function () {
-          videoplay(videoID);
-        }, 500);
-
-        return; // Exit the function, we'll call it again after season switch
-      }
-    }
-
     // Try season containers with new format
+    var currentSeason = activePanel.index() + 1;
     video = jQuery("#season-" + currentSeason).find('[data-video="' + videoID + '"]');
-    console.log("Checking season-" + currentSeason + ":", video.length > 0);
 
     // Try old format containers as fallback
     if (video.length === 0) {
       video = jQuery("#player-videos").find('[data-video="' + videoID + '"]');
-      console.log("Checking player-videos:", video.length > 0);
 
       if (video.length === 0) {
         video = jQuery("#player-videos-" + currentSeason).find('[data-video="' + videoID + '"]');
-        console.log("Checking player-videos-" + currentSeason + ":", video.length > 0);
       }
     }
 
     // Last resort - try any container
     if (video.length === 0) {
       video = jQuery('.player-item[data-video="' + videoID + '"]');
-      console.log("Checking any container:", video.length > 0);
     }
   }
 
@@ -213,10 +170,10 @@ function videoplay(videoID) {
   var item = jQuery('.chapter-item[data-id="' + videoID + '"]');
   var chapter = item.length ? item.closest(".chapter") : null;
   var loading = jQuery(".player-loading");
-  var videoPlr = video.length ? video.find("video")[0] : null;
+  var videoPlr = video.find("video")[0];
 
-  console.log("Final video found:", video.length > 0);
-  console.log("Chapter item found:", item.length > 0);
+  console.log("Found video:", video.length > 0);
+  console.log("Found chapter item:", item.length > 0);
 
   if (video.length > 0) {
     // Show loading indicator
@@ -235,11 +192,6 @@ function videoplay(videoID) {
         try {
           videoPlr.play().catch(function (err) {
             console.log("Video play error:", err);
-
-            // If autoplay fails, add a play overlay
-            if (typeof DBWayUtils !== "undefined" && typeof DBWayUtils.addPlayOverlay === "function") {
-              DBWayUtils.addPlayOverlay(videoPlr);
-            }
           });
         } catch (e) {
           console.error("Error playing video:", e);
@@ -283,101 +235,34 @@ function videoplay(videoID) {
  * Handle video end event
  */
 function videoend(videoID) {
-  console.log("Video ended:", videoID);
-
-  // Pause all videos
   jQuery(".player-item video").each(function () {
     jQuery(this).get(0).pause();
   });
 
-  // Find the current video and its container
   var video = jQuery('.player-item[data-video="' + videoID + '"]');
-  var activePanel = jQuery(".season-tab_content-panel.active");
-
-  // Find the next video within the active season panel
-  var nextVideo = video.next(".player-item");
-  var nextVideoID = nextVideo.attr("data-video");
-
-  // Find the chapter item
+  var nextVideo = jQuery(video).next(".player-item");
+  var nextVideoID = jQuery(nextVideo).attr("data-video");
   var item = jQuery('.chapter-item[data-id="' + videoID + '"]');
-  var itemNext = item.next(".chapter-item");
-  var chapter = item.closest(".chapter");
-  var nextChapter = chapter.next(".chapter");
+  var itemNext = jQuery(item).next(".chapter-item");
   var loading = jQuery(".player-loading");
 
-  console.log("Next video ID:", nextVideoID);
-  console.log("Next chapter item:", itemNext.length > 0);
-
   if (nextVideoID) {
-    // We have a next video in the same season
     jQuery(loading).addClass("active");
 
     setTimeout(function () {
-      jQuery(".player-item").removeClass("active playing");
-      nextVideo.addClass("playing active");
-
-      // Play the next video
-      try {
-        nextVideo
-          .find("video")[0]
-          .play()
-          .catch(function (err) {
-            console.warn("Could not autoplay next video:", err);
-          });
-      } catch (e) {
-        console.error("Error playing next video:", e);
-      }
-
-      // Update chapter items
+      jQuery(".player-item").removeClass("active");
+      jQuery(nextVideo).addClass("playing active");
+      jQuery(nextVideo).find("video")[0].play();
       jQuery(".chapter-item").removeClass("active");
 
       if (itemNext.length) {
-        // Next item is in the same chapter
-        itemNext.addClass("active started");
-      } else if (nextChapter.length) {
-        // Next item is in the next chapter
-        nextChapter.addClass("active");
-        var firstItem = nextChapter.find(".chapter-item").first();
-        if (firstItem.length) {
-          firstItem.addClass("active started");
-        }
+        jQuery(itemNext).addClass("active started");
       }
 
       setTimeout(function () {
         jQuery(loading).removeClass("active");
       }, 500);
     }, 500);
-  } else {
-    console.log("No next video in current season");
-
-    // Check if we should navigate to the next season
-    var currentSeason = activePanel.index() + 1;
-    var totalSeasons = jQuery(".season-tab_content-panel").length;
-
-    if (currentSeason < totalSeasons) {
-      console.log("Navigating to next season");
-      // Trigger next season navigation
-      jQuery("#nextBtn, .season-next").trigger("click");
-    } else {
-      console.log("Last season reached, returning to first chapter");
-      // Return to first chapter of current season
-      var firstChapter = activePanel.find(".chapter").first();
-      if (firstChapter.length) {
-        jQuery(".chapter").removeClass("active");
-        firstChapter.addClass("active");
-
-        var firstItem = firstChapter.find(".chapter-item").first();
-        if (firstItem.length) {
-          jQuery(".chapter-item").removeClass("active");
-          firstItem.addClass("active");
-
-          var firstVideoId = firstItem.attr("data-id");
-          if (firstVideoId) {
-            videoplay(firstVideoId);
-          }
-        }
-      }
-    }
   }
 
   // Set cookie if Cookies library is available
@@ -813,14 +698,19 @@ jQuery(document).ready(function ($) {
         jQuery(".hero-play").addClass("paused");
 
         $(".season-tab_link").attr("data-tab", "");
-        if (season <= 1) {
+        if (season == 1) {
           $(".season-tab_link.is-season-1").attr("data-tab", "current");
           $(".season-tab_content-panel").eq(0).addClass("active");
-          //jQuery(season).find(video).addClass("active");
-        } else {
+        } else if (season == 2) {
           $(".season-tab_link.is-season-2").attr("data-tab", "current");
           $(".season-tab_content-panel").eq(1).addClass("active");
-          //jQuery(season).find(video).addClass("active");
+        } else if (season == 3) {
+          $(".season-tab_link.is-season-3").attr("data-tab", "current");
+          $(".season-tab_content-panel").eq(2).addClass("active");
+        } else {
+          // Default to season 1 if season value is invalid
+          $(".season-tab_link.is-season-1").attr("data-tab", "current");
+          $(".season-tab_content-panel").eq(0).addClass("active");
         }
 
         if (imagesrc) {
@@ -1074,115 +964,49 @@ function videoend(videoID) {
 }
 
 function videoprev(videoID) {
-  console.log("Previous video requested for:", videoID);
-
-  // Pause all videos
   $(".player-item video").each(function () {
     jQuery(this).get(0).pause();
   });
-
-  // Find the current video and its container
+  //closeFullscreen();
+  //console.log("Prev video requested");
   var video = jQuery('.player-item[data-video="' + videoID + '"]');
-  var activePanel = jQuery(".season-tab_content-panel.active");
-
-  // Find the previous video within the active season panel
-  var prevVideo = video.prev(".player-item");
-  var prevVideoID = prevVideo.attr("data-video");
-
-  // Find the chapter item
+  var prevVideo = jQuery(video).prev(".player-item");
+  var prevVideoID = jQuery(prevVideo).attr("data-video");
   var item = jQuery('.chapter-item[data-id="' + videoID + '"]');
-  var itemPrev = item.prev(".chapter-item");
-  var itemPrevID = itemPrev.attr("data-id");
-  var chapter = item.closest(".chapter");
-  var prevChapter = chapter.prev(".chapter");
-  var prevChapterItem = prevChapter.length ? prevChapter.find(".chapter-list .chapter-item").last() : null;
+  var itemPrev = jQuery(item).prev(".chapter-item");
+  var itemPrevID = jQuery(itemPrev).attr("data-id");
+  var prevChapter = jQuery(item).parent().parent().parent().parent().prev(".chapter");
+  var prevChapterItem = jQuery(prevChapter).find(".chapter-list .chapter-item").last();
   var loading = jQuery(".player-loading");
 
-  console.log("Previous video ID:", prevVideoID);
-  console.log("Previous chapter item:", itemPrev.length > 0);
-
   if (prevVideoID) {
-    // We have a previous video in the same season
     jQuery(loading).addClass("active");
 
     setTimeout(function () {
-      jQuery(".player-item").removeClass("active playing");
-      prevVideo.addClass("playing active");
-
-      // Play the previous video
-      try {
-        prevVideo
-          .find("video")[0]
-          .play()
-          .catch(function (err) {
-            console.warn("Could not autoplay previous video:", err);
-          });
-      } catch (e) {
-        console.error("Error playing previous video:", e);
-      }
-
-      // Update chapter items
+      jQuery(".player-item").removeClass("active");
+      jQuery(prevVideo).addClass("playing active");
+      jQuery(prevVideo).find("video")[0].play();
       jQuery(".chapter-item").removeClass("active");
 
       if (itemPrevID) {
-        // Previous item is in the same chapter
-        itemPrev.addClass("active started");
-      } else if (prevChapter.length && prevChapterItem) {
-        // Previous item is in the previous chapter
+        jQuery(itemPrev).addClass("active started");
+      } else {
         jQuery(".chapter").removeClass("active");
-        prevChapter.addClass("active");
-        prevChapterItem.addClass("active started");
-
-        // Scroll to bottom of chapter list if needed
-        if ($(".scrollbar").length) {
-          $(".scrollbar").animate(
-            {
-              scrollTop: $(".scrollbar")[0].scrollHeight,
-            },
-            50
-          );
-        }
+        jQuery(prevChapter).addClass("active");
+        jQuery(prevChapterItem).addClass("active started");
+        $(".scrollbar").animate(
+          {
+            scrollTop: $(".scrollbar").offset().bottom,
+          },
+          50
+        );
       }
-
       setTimeout(function () {
         jQuery(loading).removeClass("active");
       }, 500);
     }, 500);
   } else {
-    console.log("No previous video in current season");
-
-    // Check if we should navigate to the previous season
-    var currentSeason = activePanel.index() + 1;
-
-    if (currentSeason > 1) {
-      console.log("Navigating to previous season");
-      // Trigger previous season navigation
-      jQuery("#prevBtn, .season-prev").trigger("click");
-
-      // After navigation, select the last video of the previous season
-      setTimeout(function () {
-        var newActivePanel = jQuery(".season-tab_content-panel.active");
-        var lastChapter = newActivePanel.find(".chapter").last();
-
-        if (lastChapter.length) {
-          jQuery(".chapter").removeClass("active");
-          lastChapter.addClass("active");
-
-          var lastItem = lastChapter.find(".chapter-item").last();
-          if (lastItem.length) {
-            jQuery(".chapter-item").removeClass("active");
-            lastItem.addClass("active");
-
-            var lastVideoId = lastItem.attr("data-id");
-            if (lastVideoId) {
-              videoplay(lastVideoId);
-            }
-          }
-        }
-      }, 600);
-    } else {
-      console.log("First season reached, no previous videos available");
-    }
+    console.log("No previous video");
   }
 }
 

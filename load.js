@@ -70,7 +70,7 @@ window.fsAttributes.push([
       let currentScript = scripts[scripts.length - 1];
       let baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
 
-      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls-new.js"];
+      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls.js"];
 
       /**
        * Recursively loads scripts in sequence
@@ -124,18 +124,17 @@ window.fsAttributes.push([
 
           // Tab Functions
           $(".season-tab_link").on("click", function () {
-            // Get the season number from the class (is-season-X)
-            let seasonClass = $(this)
-              .attr("class")
-              .match(/is-season-(\d+)/);
-            if (seasonClass && seasonClass[1]) {
-              let seasonNumber = seasonClass[1];
-
-              // Remove active class from all panels
-              $(".season-tab_content-panel").removeClass("active");
-
-              // Add active class to the corresponding panel using data attribute
-              $(`.season-tab_content-panel[data-season-${seasonNumber}]`).addClass("active");
+            // Tabs
+            let current = $(".season-tab_content-panel.active");
+            if ($(this).attr("id") === "nextBtn") {
+              $(".season-tab_content-panel.active").next(".season-tab_content-panel").addClass("active");
+            } else {
+              // Active pevious tab
+              $(".season-tab_content-panel.active").prev(".season-tab_content-panel").addClass("active");
+            }
+            if ($(".season-tab_content-panel.active").length > 1) {
+              // Remove original active tab
+              current.removeClass("active");
 
               // Player Item
               $(".player-item").removeClass("active");
@@ -156,11 +155,11 @@ window.fsAttributes.push([
 
             if (current) {
               if (getIndex === 0) {
-                $("#heroBtn").text("Play Season 1");
+                $("#heroBtn").text("Season 1");
               } else if (getIndex === 1) {
-                $("#heroBtn").text("Play Season 2");
+                $("#heroBtn").text("Season 2");
               } else if (getIndex === 2) {
-                $("#heroBtn").text("Play Season 3");
+                $("#heroBtn").text("Season 3");
               }
               // Pause video
               $(".player-item video").each(function () {
@@ -173,10 +172,9 @@ window.fsAttributes.push([
             }
           }
 
-          // Initialize Season 3 as the active tab by default
+          // Initialize first tab
           if (!$(".season-tab_content-panel").hasClass("active")) {
-            $(".season-tab_content-panel[data-season-3]").addClass("active");
-            $(".season-tab_link.is-season-3").attr("data-tab", "current");
+            $(".season-tab_content-panel").first().addClass("active");
           }
           updateTab();
 
