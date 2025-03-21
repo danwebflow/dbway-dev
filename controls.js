@@ -2,14 +2,22 @@
  * Video player controls functionality
  */
 
-// Debug mode flag - set to true to automatically mute videos for testing
+// Debug mode flags - set to true to enable debugging features
 const debugMode = true;
+const debugSeasonNav = true; // Set to true to enable season navigation debugging
 
-// Display a notice in console when debug mode is active
+// Display a notice in console when debug modes are active
 if (debugMode) {
   console.log(
     "⚠️ DEBUG MODE ACTIVE: All videos are muted for testing",
     "To disable debug mode, set debugMode variable to false."
+  );
+}
+
+if (debugSeasonNav) {
+  console.log(
+    "🔄 SEASON NAVIGATION DEBUG MODE ACTIVE: Detailed logging enabled for season navigation",
+    "To disable, set debugSeasonNav variable to false."
   );
 }
 
@@ -58,10 +66,39 @@ jQuery(document).ready(function ($) {
   function initSeasonNavigation() {
     // Function to navigate between seasons
     function navigateToSeason(direction) {
-      // Get current active panel
-      const currentPanel = $(".season-tab_content-panel.active");
-      const currentIndex = currentPanel.index();
-      const totalPanels = $(".season-tab_content-panel").length;
+      if (debugSeasonNav) console.log("Navigating to season:", direction);
+
+      // Get current active panel - try multiple possible selectors
+      const currentPanel = $(".season-tab_content-panel.active, .w-tab-pane.w--tab-active, [data-w-tab].w--tab-active").first();
+
+      if (!currentPanel.length) {
+        console.warn("No active season panel found");
+
+        // If no active panel found, try to find any panel and activate the first one
+        const anyPanel = $(".season-tab_content-panel, .w-tab-pane, [data-w-tab]").first();
+        if (anyPanel.length) {
+          if (debugSeasonNav) console.log("No active panel found, activating first panel");
+          anyPanel.addClass("active w--tab-active");
+          return;
+        }
+
+        return;
+      }
+
+      if (debugSeasonNav) console.log("Current panel:", currentPanel);
+
+      // Get all panels - try multiple possible selectors
+      const allPanels = $(".season-tab_content-panel, .w-tab-pane, [data-w-tab]");
+      const totalPanels = allPanels.length;
+
+      if (totalPanels === 0) {
+        console.warn("No season panels found");
+        return;
+      }
+
+      // Find the index of the current panel among all panels
+      const currentIndex = allPanels.index(currentPanel);
+      if (debugSeasonNav) console.log("Current index:", currentIndex, "Total panels:", totalPanels);
 
       // Calculate target season index
       let targetIndex;
@@ -71,48 +108,111 @@ jQuery(document).ready(function ($) {
         targetIndex = (currentIndex - 1 + totalPanels) % totalPanels;
       }
 
-      // Convert to 1-based season number
+      if (debugSeasonNav) console.log("Target index:", targetIndex);
+
+      // Try multiple approaches to find and click the target tab
+
+      // Approach 1: Using season number
       const targetSeason = targetIndex + 1;
 
-      // Find the corresponding season button
-      const seasonButton = $(`#season-${targetSeason}, .season-tab_link.is-season-${targetSeason}`);
+      // Try multiple possible selectors for season buttons
+      const seasonButton = $(
+        `#season-${targetSeason},
+        .season-tab_link.is-season-${targetSeason},
+        [data-w-tab="Season ${targetSeason}"],
+        .w-tab-link[data-w-tab="Season ${targetSeason}"],
+        .w-tab-link[data-w-tab="Tab ${targetIndex+1}"],
+        .season-tab_link:eq(${targetIndex})`
+      ).first();
 
-      // Click the button to trigger the season change
+      // Approach 2: Using tab links that correspond to the panels
+      const tabLinks = $(".w-tab-link, .season-tab_link");
+      const targetTabLink = tabLinks.eq(targetIndex);
+
+      // Try clicking the season button first
       if (seasonButton.length) {
+        if (debugSeasonNav) console.log("Clicking season button:", seasonButton);
         seasonButton.trigger("click");
+
+        // Also try to directly activate the panel for redundancy
+        const targetPanel = allPanels.eq(targetIndex);
+        if (targetPanel.length) {
+          setTimeout(function() {
+            if (!targetPanel.hasClass("active") && !targetPanel.hasClass("w--tab-active")) {
+              if (debugSeasonNav) console.log("Directly activating panel as backup");
+              allPanels.removeClass("active w--tab-active");
+              targetPanel.addClass("active w--tab-active");
+            }
+          }, 100);
+        }
+      }
+      // If no season button found, try clicking the tab link
+      else if (targetTabLink.length) {
+        if (debugSeasonNav) console.log("Clicking tab link:", targetTabLink);
+        targetTabLink.trigger("click");
+      }
+      // If all else fails, try to directly show the target panel
+      else {
+        if (debugSeasonNav) console.log("No suitable button found, trying to show panel directly");
+        const targetPanel = allPanels.eq(targetIndex);
+        if (targetPanel.length) {
+          allPanels.removeClass("active w--tab-active");
+          targetPanel.addClass("active w--tab-active");
+        }
       }
     }
 
-    // Add event listeners for next/prev buttons
-    $("#nextBtn, .season-next")
-      .off("click")
-      .on("click", function (e) {
+    // Add event listeners for next/prev buttons - include all possible class names
+    $(".season-next, #nextBtn, .next-btn, .w-slider-arrow-right, .season-arrow-next")
+      .off("click.seasonNav")
+      .on("click.seasonNav", function (e) {
+        if (debugSeasonNav) console.log("Next button clicked:", this);
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
         navigateToSeason("next");
+        return false; // Ensure no default action
       });
 
-    $("#prevBtn, .season-prev")
-      .off("click")
-      .on("click", function (e) {
+    $(".season-prev, #prevBtn, .prev-btn, .w-slider-arrow-left, .season-arrow-prev")
+      .off("click.seasonNav")
+      .on("click.seasonNav", function (e) {
+        if (debugSeasonNav) console.log("Prev button clicked:", this);
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
         navigateToSeason("prev");
+        return false; // Ensure no default action
       });
+
+    // Log all navigation buttons found for debugging
+    if (debugSeasonNav) {
+      const nextButtons = $(".season-next, #nextBtn, .next-btn, .w-slider-arrow-right, .season-arrow-next");
+      const prevButtons = $(".season-prev, #prevBtn, .prev-btn, .w-slider-arrow-left, .season-arrow-prev");
+
+      console.log("Found next buttons:", nextButtons.length, nextButtons);
+      console.log("Found prev buttons:", prevButtons.length, prevButtons);
+    }
 
     // Add keyboard navigation support
     $(document)
       .off("keydown.seasonNav")
       .on("keydown.seasonNav", function (e) {
-        // Only handle if we're on the seasons page
-        if ($(".season-tab_content-panel").length === 0) return;
+        // Only handle if we're on a page with season tabs
+        // Check for multiple possible selectors to be more robust
+        const seasonElements = $(".season-tab_content-panel, .w-tab-pane, [data-w-tab]");
+        if (seasonElements.length === 0) return;
+
+        if (debugSeasonNav) console.log("Season elements found for keyboard navigation:", seasonElements.length);
 
         // Left arrow key - previous season
         if (e.keyCode === 37) {
+          if (debugSeasonNav) console.log("Left arrow key pressed - navigating to previous season");
           navigateToSeason("prev");
           return false; // Prevent default
         }
 
         // Right arrow key - next season
         if (e.keyCode === 39) {
+          if (debugSeasonNav) console.log("Right arrow key pressed - navigating to next season");
           navigateToSeason("next");
           return false; // Prevent default
         }
@@ -120,27 +220,114 @@ jQuery(document).ready(function ($) {
 
     // Add swipe support for touch devices if Hammer.js is available
     if (typeof Hammer !== "undefined") {
-      const seasonContainer = document.querySelector(".season-tab_content");
-      if (seasonContainer && !seasonContainer._hammer) {
-        const hammer = new Hammer(seasonContainer);
-        seasonContainer._hammer = hammer;
-        hammer.on("swipeleft", function () {
-          navigateToSeason("next");
-        });
-        hammer.on("swiperight", function () {
-          navigateToSeason("prev");
-        });
-      }
+      // Try multiple possible container selectors to be more robust
+      const seasonContainers = document.querySelectorAll(".season-tab_content, .w-tab-content, .tabs-content, .season-tab_content-panel, .w-tab-pane");
+
+      if (debugSeasonNav) console.log("Found potential swipe containers:", seasonContainers.length);
+
+      seasonContainers.forEach(function(seasonContainer) {
+        if (seasonContainer && !seasonContainer._hammer) {
+          if (debugSeasonNav) console.log("Setting up Hammer.js swipe on container:", seasonContainer);
+
+          try {
+            const hammer = new Hammer(seasonContainer);
+            seasonContainer._hammer = hammer;
+
+            hammer.on("swipeleft", function () {
+              if (debugSeasonNav) console.log("Swipe left detected - navigating to next season");
+              navigateToSeason("next");
+            });
+
+            hammer.on("swiperight", function () {
+              if (debugSeasonNav) console.log("Swipe right detected - navigating to previous season");
+              navigateToSeason("prev");
+            });
+          } catch (error) {
+            console.error("Error setting up Hammer.js:", error);
+          }
+        }
+      });
+    } else if (debugSeasonNav) {
+      console.log("Hammer.js not available for swipe support");
     }
   }
 
   // Initialize controls
   initVideoControls();
 
+  // Function to check and fix season navigation buttons
+  function checkAndFixSeasonNavButtons() {
+    if (debugSeasonNav) console.log("Checking and fixing season navigation buttons");
+
+    // Find all season navigation buttons
+    const nextButtons = $(".season-next, #nextBtn, .next-btn, .w-slider-arrow-right, .season-arrow-next");
+    const prevButtons = $(".season-prev, #prevBtn, .prev-btn, .w-slider-arrow-left, .season-arrow-prev");
+
+    // If no buttons found with standard classes, try to identify them by their position or content
+    if (nextButtons.length === 0 || prevButtons.length === 0) {
+      if (debugSeasonNav) console.log("Standard navigation buttons not found, looking for alternatives");
+
+      // Look for elements that might be navigation buttons based on their content or position
+      $("a, button, div").each(function() {
+        const $this = $(this);
+        const text = $this.text().toLowerCase();
+        const hasNextIcon = $this.find('[class*="next"], [class*="right"], [class*="arrow"]').length > 0;
+        const hasPrevIcon = $this.find('[class*="prev"], [class*="left"], [class*="arrow"]').length > 0;
+
+        // Check if this element looks like a next button
+        if (
+          (text.includes("next") || hasNextIcon) &&
+          !$this.hasClass("season-next") &&
+          !$this.attr("id") === "nextBtn"
+        ) {
+          if (debugSeasonNav) console.log("Found potential next button:", $this);
+          $this.addClass("season-next");
+        }
+
+        // Check if this element looks like a prev button
+        if (
+          (text.includes("prev") || text.includes("previous") || hasPrevIcon) &&
+          !$this.hasClass("season-prev") &&
+          !$this.attr("id") === "prevBtn"
+        ) {
+          if (debugSeasonNav) console.log("Found potential prev button:", $this);
+          $this.addClass("season-prev");
+        }
+      });
+
+      // Re-initialize season navigation to apply event handlers to newly identified buttons
+      initSeasonNavigation();
+    }
+  }
+
+  // Make sure season navigation is initialized even if no videos are present
+  initSeasonNavigation();
+
+  // Check and fix season navigation buttons
+  setTimeout(checkAndFixSeasonNavButtons, 1000);
+
   // Re-initialize controls when new content is loaded
   $(document).on("contentLoaded", function () {
+    if (debugSeasonNav) console.log("Content loaded event detected - reinitializing controls");
     initVideoControls();
+    initSeasonNavigation();
+    setTimeout(checkAndFixSeasonNavButtons, 500);
   });
+
+  // Also initialize on document ready to ensure it runs after Webflow's own initialization
+  $(window).on("load", function() {
+    if (debugSeasonNav) console.log("Window load event - reinitializing season navigation");
+    initSeasonNavigation();
+    setTimeout(checkAndFixSeasonNavButtons, 500);
+  });
+
+  // Add a global function that can be called from the browser console for debugging
+  window.fixSeasonNavigation = function() {
+    console.log("Manual fix of season navigation requested");
+    initSeasonNavigation();
+    checkAndFixSeasonNavButtons();
+    return "Season navigation initialization attempted";
+  };
 });
 /**
  * The DixonBaxi Way - Unified Video Controls
