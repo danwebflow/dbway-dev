@@ -1485,7 +1485,7 @@ jQuery(document).ready(function ($) {
         // EVENT LISTENERS
         if (playButton) {
           playButton.addEventListener("click", function(e) {
-            e.preventDefault();
+            //e.preventDefault();
             togglePlay();
           });
         }
