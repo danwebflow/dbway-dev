@@ -156,8 +156,10 @@ window.fsAttributes.push([
             if (current) {
               if (getIndex === 0) {
                 $("#heroBtn").text("Season 1");
-              } else {
+              } else if (getIndex === 1) {
                 $("#heroBtn").text("Season 2");
+              } else if (getIndex === 2) {
+                $("#heroBtn").text("Season 3");
               }
               // Pause video
               $(".player-item video").each(function () {

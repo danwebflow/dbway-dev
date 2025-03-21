@@ -698,14 +698,19 @@ jQuery(document).ready(function ($) {
         jQuery(".hero-play").addClass("paused");
 
         $(".season-tab_link").attr("data-tab", "");
-        if (season <= 1) {
+        if (season == 1) {
           $(".season-tab_link.is-season-1").attr("data-tab", "current");
           $(".season-tab_content-panel").eq(0).addClass("active");
-          //jQuery(season).find(video).addClass("active");
-        } else {
+        } else if (season == 2) {
           $(".season-tab_link.is-season-2").attr("data-tab", "current");
           $(".season-tab_content-panel").eq(1).addClass("active");
-          //jQuery(season).find(video).addClass("active");
+        } else if (season == 3) {
+          $(".season-tab_link.is-season-3").attr("data-tab", "current");
+          $(".season-tab_content-panel").eq(2).addClass("active");
+        } else {
+          // Default to season 1 if season value is invalid
+          $(".season-tab_link.is-season-1").attr("data-tab", "current");
+          $(".season-tab_content-panel").eq(0).addClass("active");
         }
 
         if (imagesrc) {
