@@ -1221,10 +1221,11 @@ jQuery(document).ready(function ($) {
           videoTap.classList.add("hide");
         }
 
+        // Variable to store timeout for controls hiding
+        let controlsTimeout;
+
         // Add transition animation to video controls and improve hover behavior
         function setupHoverBehavior() {
-          // Variable to store timeout
-          let controlsTimeout;
 
           // Find the player-content element (if it exists) or fallback to player
           const playerContent = player.querySelector(".player-content") || player;
