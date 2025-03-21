@@ -44,34 +44,18 @@ $(".season-tab_link").on("click", function () {
 
 // Tab Functions - Improved to handle season selection properly
 $(".season-tab_link").on("click", function () {
-  // Get the season number from the class (is-season-X)
-  let seasonClass = $(this).attr("class").match(/is-season-(\d+)/);
+  // Get the season number from the button ID (season-X) or class (is-season-X)
   let seasonNumber = 1; // Default to season 1
+  let buttonId = $(this).attr("id");
+  let seasonClass = $(this).attr("class").match(/is-season-(\d+)/);
 
-  if (seasonClass && seasonClass[1]) {
+  // Check if the button has a season-X ID
+  if (buttonId && buttonId.match(/season-(\d+)/)) {
+    seasonNumber = parseInt(buttonId.match(/season-(\d+)/)[1]);
+  }
+  // Otherwise check for is-season-X class
+  else if (seasonClass && seasonClass[1]) {
     seasonNumber = parseInt(seasonClass[1]);
-  } else if ($(this).attr("id") === "nextBtn") {
-    // Handle next button
-    let current = $(".season-tab_content-panel.active");
-    let next = current.next(".season-tab_content-panel");
-    if (next.length) {
-      current.removeClass("active");
-      next.addClass("active");
-      // Update footer
-      updateTab();
-      return;
-    }
-  } else if ($(this).attr("id") === "prevBtn") {
-    // Handle previous button
-    let current = $(".season-tab_content-panel.active");
-    let prev = current.prev(".season-tab_content-panel");
-    if (prev.length) {
-      current.removeClass("active");
-      prev.addClass("active");
-      // Update footer
-      updateTab();
-      return;
-    }
   }
 
   // Remove active class from all panels
@@ -79,7 +63,7 @@ $(".season-tab_link").on("click", function () {
 
   // Add active class to the corresponding panel
   // Try first with data-season-X attribute
-  let targetPanel = $(`.season-tab_content-panel[data-season-${seasonNumber}]`);
+  let targetPanel = $(`.season-tab_content-panel[data-season="${seasonNumber}"]`);
 
   // If not found, fall back to index-based selection
   if (targetPanel.length === 0) {
@@ -95,10 +79,23 @@ $(".season-tab_link").on("click", function () {
     $(".chapter").removeClass("active");
     $(".chapter-item").removeClass("active");
 
+    // Update season-specific CSS classes
+    updateSeasonClasses(seasonNumber);
+
     // Update footer
     updateTab();
   }
 });
+
+// Function to update season-specific CSS classes
+function updateSeasonClasses(seasonNumber) {
+  // Remove all season classes from buttons
+  $("#hero-button, #find-button, .season-tab_link").removeClass("s1 s2 s3");
+
+  // Add the appropriate season class
+  const seasonClass = "s" + seasonNumber;
+  $("#hero-button, #find-button, .season-tab_link[data-tab='current']").addClass(seasonClass);
+}
 
 // Add chapter-info click handler
 $(document).on("click", ".chapter-info", function () {
@@ -161,6 +158,9 @@ function updateTab() {
     if ($("#heroBtn").length) {
       $("#heroBtn").text("Season " + seasonNumber);
     }
+
+    // Update season-specific CSS classes
+    updateSeasonClasses(seasonNumber);
 
     // Pause all videos
     $(".player-item video").each(function () {
@@ -258,10 +258,31 @@ jQuery(window).on("resize", function () {
 
 // Initialize tabs on page load
 jQuery(document).ready(function($) {
-  // If no tab is active, activate the first one
+  // If no tab is active, activate the one with data-tab="active" or the first one
   if ($(".season-tab_content-panel.active").length === 0) {
-    $(".season-tab_content-panel").first().addClass("active");
-    $(".season-tab_link").first().attr("data-tab", "current");
+    // Check if there's a tab with data-tab="active"
+    const activeTabLink = $(".season-tab_link[data-tab='active']");
+
+    if (activeTabLink.length) {
+      // Get the season number from the active tab
+      let seasonNumber = 1;
+      let buttonId = activeTabLink.attr("id");
+      let seasonClass = activeTabLink.attr("class").match(/is-season-(\d+)/);
+
+      if (buttonId && buttonId.match(/season-(\d+)/)) {
+        seasonNumber = parseInt(buttonId.match(/season-(\d+)/)[1]);
+      } else if (seasonClass && seasonClass[1]) {
+        seasonNumber = parseInt(seasonClass[1]);
+      }
+
+      // Activate the corresponding panel
+      $(`.season-tab_content-panel[data-season="${seasonNumber}"]`).addClass("active");
+      activeTabLink.attr("data-tab", "current");
+    } else {
+      // Default to the first tab
+      $(".season-tab_content-panel").first().addClass("active");
+      $(".season-tab_link").first().attr("data-tab", "current");
+    }
   }
 
   // Run updateTab to initialize the active tab
