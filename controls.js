@@ -49,6 +49,160 @@ jQuery(document).ready(function ($) {
         videoplay(prevVideoID);
       }
     });
+
+    // Add event listeners for season navigation
+    initSeasonNavigation();
+  }
+
+  // Initialize season navigation controls
+  function initSeasonNavigation() {
+    // Function to navigate between seasons
+    function navigateToSeason(direction) {
+      // Get current active panel
+      const currentPanel = $(".season-tab_content-panel.active");
+      const currentIndex = currentPanel.index();
+      const totalPanels = $(".season-tab_content-panel").length;
+
+      // Calculate target season index
+      let targetIndex;
+      if (direction === 'next') {
+        targetIndex = (currentIndex + 1) % totalPanels;
+      } else {
+        targetIndex = (currentIndex - 1 + totalPanels) % totalPanels;
+      }
+
+      // Convert to 1-based season number
+      const targetSeason = targetIndex + 1;
+
+      // Find the corresponding season button
+      const seasonButton = $(`#season-${targetSeason}, .season-tab_link.is-season-${targetSeason}`);
+
+      // Click the button to trigger the season change
+      if (seasonButton.length) {
+        seasonButton.trigger('click');
+      }
+    }
+
+    // Add event listeners for next/prev buttons
+    $("#nextBtn, .season-next").off('click').on("click", function(e) {
+      e.preventDefault();
+      navigateToSeason('next');
+    });
+
+    $("#prevBtn, .season-prev").off('click').on("click", function(e) {
+      e.preventDefault();
+      navigateToSeason('prev');
+    });
+
+    // Add keyboard navigation support
+    $(document).off('keydown.seasonNav').on("keydown.seasonNav", function(e) {
+      // Only handle if we're on the seasons page
+      if ($(".season-tab_content-panel").length === 0) return;
+
+      // Left arrow key - previous season
+      if (e.keyCode === 37) {
+        navigateToSeason('prev');
+        return false; // Prevent default
+      }
+
+      // Right arrow key - next season
+      if (e.keyCode === 39) {
+        navigateToSeason('next');
+        return false; // Prevent default
+      }
+    });
+
+    // Add swipe support for touch devices if Hammer.js is available
+    if (typeof Hammer !== 'undefined') {
+      const seasonContainer = document.querySelector('.season-tab_content');
+      if (seasonContainer && !seasonContainer._hammer) {
+        const hammer = new Hammer(seasonContainer);
+        seasonContainer._hammer = hammer;
+        hammer.on('swipeleft', function() {
+          navigateToSeason('next');
+        });
+        hammer.on('swiperight', function() {
+          navigateToSeason('prev');
+        });
+      }
+    }
+
+    // Add event listeners for season navigation
+    initSeasonNavigation();
+  }
+
+  // Initialize season navigation controls
+  function initSeasonNavigation() {
+    // Function to navigate between seasons
+    function navigateToSeason(direction) {
+      // Get current active panel
+      const currentPanel = $(".season-tab_content-panel.active");
+      const currentIndex = currentPanel.index();
+      const totalPanels = $(".season-tab_content-panel").length;
+
+      // Calculate target season index
+      let targetIndex;
+      if (direction === 'next') {
+        targetIndex = (currentIndex + 1) % totalPanels;
+      } else {
+        targetIndex = (currentIndex - 1 + totalPanels) % totalPanels;
+      }
+
+      // Convert to 1-based season number
+      const targetSeason = targetIndex + 1;
+
+      // Find the corresponding season button
+      const seasonButton = $(`#season-${targetSeason}, .season-tab_link.is-season-${targetSeason}`);
+
+      // Click the button to trigger the season change
+      if (seasonButton.length) {
+        seasonButton.trigger('click');
+      }
+    }
+
+    // Add event listeners for next/prev buttons
+    $("#nextBtn, .season-next").off('click').on("click", function(e) {
+      e.preventDefault();
+      navigateToSeason('next');
+    });
+
+    $("#prevBtn, .season-prev").off('click').on("click", function(e) {
+      e.preventDefault();
+      navigateToSeason('prev');
+    });
+
+    // Add keyboard navigation support
+    $(document).off('keydown.seasonNav').on("keydown.seasonNav", function(e) {
+      // Only handle if we're on the seasons page
+      if ($(".season-tab_content-panel").length === 0) return;
+
+      // Left arrow key - previous season
+      if (e.keyCode === 37) {
+        navigateToSeason('prev');
+        return false; // Prevent default
+      }
+
+      // Right arrow key - next season
+      if (e.keyCode === 39) {
+        navigateToSeason('next');
+        return false; // Prevent default
+      }
+    });
+
+    // Add swipe support for touch devices if Hammer.js is available
+    if (typeof Hammer !== 'undefined') {
+      const seasonContainer = document.querySelector('.season-tab_content');
+      if (seasonContainer && !seasonContainer._hammer) {
+        const hammer = new Hammer(seasonContainer);
+        seasonContainer._hammer = hammer;
+        hammer.on('swipeleft', function() {
+          navigateToSeason('next');
+        });
+        hammer.on('swiperight', function() {
+          navigateToSeason('prev');
+        });
+      }
+    }
   }
 
   // Initialize controls
@@ -960,7 +1114,7 @@ jQuery(document).ready(function ($) {
           const playerContent = player.querySelector(".player-content") || player;
 
           // Identify elements that should be excluded from hover behavior
-          const videoInfo = player.querySelector(".video-info");
+          const videoInfo = player.querySelector(".video-info"); - with passive option for better performance
           const videoOptions = player.querySelector(".video-options");
 
           // Function to check if an element or its parents have specific classes
@@ -972,7 +1126,7 @@ jQuery(document).ready(function ($) {
               element = element.parentElement;
             }
             return false;
-          }
+          }, { passive: true }
 
           // Function to handle mouse movement
           function handleMouseMove(e) {
