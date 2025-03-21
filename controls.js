@@ -1492,7 +1492,7 @@ jQuery(document).ready(function ($) {
 
         if (videoTap) {
           videoTap.addEventListener("click", function(e) {
-            e.preventDefault();
+  
             togglePlay();
             showControls();
           });
@@ -1507,7 +1507,7 @@ jQuery(document).ready(function ($) {
 
         // Combine click handlers to avoid conflicts
         video.addEventListener("click", function(e) {
-          e.preventDefault();
+
           togglePlay();
           animatePlayback();
         });
@@ -1556,7 +1556,7 @@ jQuery(document).ready(function ($) {
 
         if (fullscreenButton && videoWrapper) {
           fullscreenButton.addEventListener("click", function(e) {
-            e.preventDefault();
+  
             toggleFullScreen();
           });
 
@@ -1606,7 +1606,7 @@ jQuery(document).ready(function ($) {
           });
           play.addEventListener("touchstart", function (e) {
             // Prevent default behavior to avoid conflicts
-            e.preventDefault();
+  
 
             time = window.setInterval(function () {
               try {
