@@ -5,10 +5,15 @@
 console.log("loading scripts...");
 
 window.addEventListener("DOMContentLoaded", () => {
-  // Season Defaults
-  $(".season-tab_link").eq(0).addClass("is-season-1");
-  $(".season-tab_link").eq(1).addClass("is-season-2");
-  $(".season-tab_link").eq(2).addClass("is-season-3");
+  // Season Defaults - add both classes and data attributes
+  $(".season-tab_link").eq(0).addClass("is-season-1").attr("data-season", "1");
+  $(".season-tab_link").eq(1).addClass("is-season-2").attr("data-season", "2");
+  $(".season-tab_link").eq(2).addClass("is-season-3").attr("data-season", "3");
+
+  // Also add data attributes to panels if they don't have them
+  $(".season-tab_content-panel").eq(0).attr("data-season", "1");
+  $(".season-tab_content-panel").eq(1).attr("data-season", "2");
+  $(".season-tab_content-panel").eq(2).attr("data-season", "3");
 
   // Handle responsive video container sizing
   jQuery(function () {

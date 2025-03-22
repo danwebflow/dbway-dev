@@ -148,7 +148,6 @@ function videoplay(videoID) {
   // If not found in active panel, try all player containers
   if (video.length === 0) {
     // Try season containers with new format
-    var currentSeason = activePanel.index() + 1;
     video = jQuery("#season-" + currentSeason).find('[data-video="' + videoID + '"]');
 
     // Try old format containers as fallback
@@ -1010,37 +1009,7 @@ function videoprev(videoID) {
   }
 }
 
-function videoplay(videoID) {
-  jQuery(".hero-video")[0].pause();
-  jQuery(".player-item video").each(function () {
-    jQuery(this).get(0).pause();
-  });
-  var video = jQuery('.player-item[data-video="' + videoID + '"]');
-  var findSubs = jQuery(video).find("subtitles-button")[0];
-  var videoPlr = jQuery(video).find("video")[0];
-  var item = jQuery('.chapter-item[data-id="' + videoID + '"]');
-  var chapter = jQuery(item).parent().parent().parent().parent();
-  var loading = jQuery(".player-loading");
-
-  if (videoPlr) {
-    jQuery(loading).addClass("active");
-
-    setTimeout(function () {
-      jQuery(".player-item, .chapter-item, .chapter").removeClass("active");
-      jQuery(video).addClass("playing active");
-      jQuery(video).find("video")[0].play();
-      jQuery(chapter).addClass("active");
-      jQuery(item).addClass("active started");
-      setTimeout(function () {
-        jQuery(loading).removeClass("active");
-      }, 500);
-    }, 500);
-
-    Cookies.set(videoID, "started", { expires: 365 });
-  } else {
-    console.log("No video found");
-  }
-}
+// Legacy videoplay function removed to avoid duplication
 
 function heroend() {
   jQuery(".hero-cover").addClass("active");
