@@ -3,7 +3,7 @@
  */
 
 // Debug mode flag - set to true to automatically mute videos for testing
-const debugMode = true;
+const debugMode = false;
 
 // Display a notice in console when debug mode is active
 if (debugMode) {
