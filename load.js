@@ -6,18 +6,30 @@
  * To enable development mode, add the devMode attribute to the script tag:
  * <script devMode="true" src="https://danwebflow.github.io/dbway-dev/load.js"></script>
  */
-console.log("loading scripts devmode...");
+// Initialize scripts
 
 // Check for development mode attribute in the script tag
 (function () {
-  // Find the current script tag
+  // Find the script tag that loaded this file
   let scripts = document.getElementsByTagName("script");
-  let currentScript = scripts[scripts.length - 1];
+  let currentScript = null;
+
+  // Loop through all scripts to find the one with our src or devMode attribute
+  for (let i = 0; i < scripts.length; i++) {
+    if (scripts[i].src && scripts[i].src.includes("dbway-dev/load.js")) {
+      currentScript = scripts[i];
+      break;
+    }
+  }
+
+  // If we couldn't find it, use the last script as a fallback
+  if (!currentScript && scripts.length > 0) {
+    currentScript = scripts[scripts.length - 1];
+  }
 
   // Check if the devMode attribute is set to "true"
-  if (currentScript.getAttribute("devMode") === "true") {
+  if (currentScript && currentScript.getAttribute("devMode") === "true") {
     window.dbwayDevMode = true;
-    console.log("DBWay: Development mode enabled via script attribute");
 
     // Create a visual indicator for development mode
     window.addEventListener("DOMContentLoaded", function () {
@@ -25,7 +37,7 @@ console.log("loading scripts devmode...");
       devIndicator.style.position = "fixed";
       devIndicator.style.bottom = "10px";
       devIndicator.style.right = "10px";
-      devIndicator.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+      devIndicator.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
       devIndicator.style.color = "white";
       devIndicator.style.padding = "5px 10px";
       devIndicator.style.borderRadius = "3px";
@@ -123,32 +135,24 @@ window.fsAttributes.push([
      */
     async function isLocalServerRunning() {
       if (!useLocalDevelopment) {
-        console.log("DBWay: Development mode is not enabled, using remote scripts");
         return false;
       }
 
-      console.log("DBWay: Development mode is enabled, checking for local server...");
-
-      // Create a more reliable way to test if the local server is running
+      // Create a reliable way to test if the local server is running
       const testUrl = `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/load.js`;
 
       return new Promise((resolve) => {
-        // Use an image object for more reliable cross-origin detection
+        // Use an image object for reliable cross-origin detection
         const img = new Image();
 
         // Set a short timeout
         const timeout = setTimeout(() => {
-          console.log("DBWay: Local server detection timed out, using remote scripts");
           resolve(false);
         }, 1000);
 
         // If the image loads, the server is running
         img.onload = () => {
           clearTimeout(timeout);
-          console.log(
-            "DBWay: Local development server is running at",
-            `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/`
-          );
           resolve(true);
         };
 
@@ -161,10 +165,8 @@ window.fsAttributes.push([
             if (xhr.readyState === 4) {
               clearTimeout(timeout);
               if (xhr.status >= 200 && xhr.status < 400) {
-                console.log("DBWay: Local development server is running (XHR method)");
                 resolve(true);
               } else {
-                console.log("DBWay: Local development server is not running, using remote scripts");
                 resolve(false);
               }
             }
@@ -176,7 +178,6 @@ window.fsAttributes.push([
             xhr.send();
           } catch (e) {
             clearTimeout(timeout);
-            console.log("DBWay: Local development server is not running (XHR failed)");
             resolve(false);
           }
         };
@@ -201,24 +202,17 @@ window.fsAttributes.push([
 
         if (isLocalMode) {
           baseUrl = `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/`;
-          console.log("DBWay: Using local development server at", baseUrl);
-
-          // Add a timestamp to prevent caching in development mode
-          const timestamp = new Date().getTime();
-          console.log("DBWay: Adding cache-busting timestamp:", timestamp);
         } else {
           // Get the base URL for the scripts (current script's directory)
           let scripts = document.getElementsByTagName("script");
           let currentScript = scripts[scripts.length - 1];
           baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
-          console.log("DBWay: Using remote scripts from", baseUrl);
         }
       } catch (error) {
         // Fallback to current script's directory if there's an error
         let scripts = document.getElementsByTagName("script");
         let currentScript = scripts[scripts.length - 1];
         baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
-        console.log("DBWay: Error detecting environment, using remote scripts from", baseUrl);
       }
 
       // Define script files to load
@@ -242,18 +236,13 @@ window.fsAttributes.push([
           let headTag = document.getElementsByTagName("head")[0];
           let scriptTag = document.createElement("script");
 
-          console.log("DBWay: Loading script:", nextLib);
-
           scriptTag.src = nextLib;
           scriptTag.onload = function (e) {
-            console.log("DBWay: Successfully loaded:", e.target.src);
-
             // Load the next script after this one is loaded
             loadScripts();
 
             // If this is the tabs script, initialize tabs immediately
             if (e.target.src.indexOf("tabs.js") > -1) {
-              console.log("DBWay: Tabs script loaded, initializing video container sizes");
               // Force adjustVideoContainerSizes to run after tabs are loaded
               setTimeout(function () {
                 adjustVideoContainerSizes();
@@ -263,12 +252,8 @@ window.fsAttributes.push([
 
           // Handle script load errors
           scriptTag.onerror = function (e) {
-            console.error("DBWay: Failed to load script:", nextLib);
-
             // If we're in local mode and a script fails to load, try the remote version
             if (isLocalMode && nextLib.includes(localDevConfig.host)) {
-              console.log("DBWay: Attempting to load remote version instead");
-
               // Get the filename from the URL
               const filename = nextLib.split("/").pop().split("?")[0];
 
@@ -282,16 +267,12 @@ window.fsAttributes.push([
               fallbackScript.src = remoteBaseUrl + filename;
 
               fallbackScript.onload = function () {
-                console.log("DBWay: Successfully loaded remote fallback:", filename);
                 loadScripts();
               };
 
               fallbackScript.onerror = function () {
-                console.error("DBWay: Failed to load remote fallback:", filename);
-
                 // If tabs script fails to load, include its functionality inline
                 if (filename === "tabs.js") {
-                  console.log("DBWay: Using inline tabs functionality");
                   initializeTabsFunctionality();
                 }
 
@@ -304,7 +285,6 @@ window.fsAttributes.push([
 
             // If tabs script fails to load, include its functionality inline
             if (e.target.src.indexOf("tabs.js") > -1) {
-              console.log("DBWay: Using inline tabs functionality");
               initializeTabsFunctionality();
             }
 
@@ -313,8 +293,6 @@ window.fsAttributes.push([
           };
 
           headTag.appendChild(scriptTag);
-        } else {
-          console.log("DBWay: All scripts loaded successfully");
         }
       };
 
