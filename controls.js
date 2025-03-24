@@ -492,6 +492,53 @@ jQuery(document).ready(function ($) {
       if (controlsSubtitles) {
         controlsSubtitles.classList.remove("hide");
       }
+
+      // Special handling for Season 3 - only English captions
+      const containerId = player.closest('[id^="season-"]')?.id;
+      if (containerId === "season-3") {
+        // Check if there are English captions available
+        let hasEnglishCaptions = false;
+
+        // Check track elements for English captions
+        for (let i = 0; i < trackElements.length; i++) {
+          const track = trackElements[i];
+          if (
+            (track.kind === "subtitles" || track.kind === "captions") &&
+            track.getAttribute("srclang") === "en" &&
+            track.getAttribute("src") &&
+            track.getAttribute("src").trim() !== ""
+          ) {
+            hasEnglishCaptions = true;
+            break;
+          }
+        }
+
+        // Also check textTracks for English captions
+        if (!hasEnglishCaptions && video.textTracks && video.textTracks.length > 0) {
+          for (let i = 0; i < video.textTracks.length; i++) {
+            const textTrack = video.textTracks[i];
+            if ((textTrack.kind === "subtitles" || textTrack.kind === "captions") && textTrack.language === "en") {
+              hasEnglishCaptions = true;
+              break;
+            }
+          }
+        }
+
+        // Hide non-English caption options in the caption panel
+        const captionOptions = player.querySelectorAll("[name='caption-language-selector']");
+        if (captionOptions && captionOptions.length > 0) {
+          captionOptions.forEach((option) => {
+            const optionLang = option.getAttribute("lang");
+            // Only show English and Disabled options
+            if (optionLang !== "en" && optionLang !== "") {
+              const optionLabel = option.closest("label");
+              if (optionLabel) {
+                optionLabel.style.display = "none";
+              }
+            }
+          });
+        }
+      }
     }
   }
 
@@ -755,8 +802,35 @@ jQuery(document).ready(function ($) {
                 controlsSubtitles.classList.remove("hide");
               }
 
-              // For Season 2 and above, initialize language selection
-              if (
+              // Special handling for Season 3 - only English captions
+              if (videoWrapperId === "season-3") {
+                // Hide all non-English caption options
+                const captionOptions = player.querySelectorAll("#caption-scroll [name='caption-language-selector']");
+                if (captionOptions && captionOptions.length > 0) {
+                  captionOptions.forEach((option) => {
+                    const optionLang = option.getAttribute("lang");
+                    // Only show English and Disabled options
+                    if (optionLang !== "en" && optionLang !== "") {
+                      const optionLabel = option.closest("label");
+                      if (optionLabel) {
+                        optionLabel.style.display = "none";
+                      }
+                    }
+                  });
+                }
+
+                // Set English as default if available
+                const englishOption = player.querySelector(
+                  "#caption-scroll [name='caption-language-selector'][lang='en']"
+                );
+                if (englishOption) {
+                  lang = "en";
+                  $(englishOption).trigger("click");
+                  englishOption.previousElementSibling.classList.add("w--redirected-checked");
+                }
+              }
+              // For Season 2, initialize language selection with all options
+              else if (
                 (videoWrapperId === "season-2" ||
                   videoWrapperId === "player-videos-2" ||
                   (videoWrapperId.startsWith("season-") && parseInt(videoWrapperId.split("-")[1]) >= 2)) &&

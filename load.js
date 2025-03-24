@@ -1,8 +1,43 @@
 /**
  * Main initialization on DOM content loaded
  * Sets up season tabs and handles responsive video container sizing
+ *
+ * Development Mode:
+ * To enable development mode, add the devMode attribute to the script tag:
+ * <script devMode="true" src="https://danwebflow.github.io/dbway-dev/load.js"></script>
  */
-console.log("loading scripts...");
+console.log("loading scripts devmode...");
+
+// Check for development mode attribute in the script tag
+(function () {
+  // Find the current script tag
+  let scripts = document.getElementsByTagName("script");
+  let currentScript = scripts[scripts.length - 1];
+
+  // Check if the devMode attribute is set to "true"
+  if (currentScript.getAttribute("devMode") === "true") {
+    window.dbwayDevMode = true;
+    console.log("DBWay: Development mode enabled via script attribute");
+
+    // Create a visual indicator for development mode
+    window.addEventListener("DOMContentLoaded", function () {
+      const devIndicator = document.createElement("div");
+      devIndicator.style.position = "fixed";
+      devIndicator.style.bottom = "10px";
+      devIndicator.style.right = "10px";
+      devIndicator.style.backgroundColor = "rgba(255, 0, 0, 0.7)";
+      devIndicator.style.color = "white";
+      devIndicator.style.padding = "5px 10px";
+      devIndicator.style.borderRadius = "3px";
+      devIndicator.style.fontFamily = "monospace";
+      devIndicator.style.fontSize = "12px";
+      devIndicator.style.zIndex = "9999";
+      devIndicator.textContent = "DBWay Dev Mode";
+
+      document.body.appendChild(devIndicator);
+    });
+  }
+})();
 
 window.addEventListener("DOMContentLoaded", () => {
   // Season Defaults - add both classes and data attributes
@@ -66,16 +101,136 @@ window.fsAttributes.push([
   "cmsnest",
   (nestInstances) => {
     /**
+     * DBWay Development Mode Configuration
+     * Enable by adding devMode="true" attribute to the script tag:
+     * <script devMode="true" src="https://danwebflow.github.io/dbway-dev/load.js"></script>
+     */
+    const useLocalDevelopment = window.dbwayDevMode || false;
+
+    /**
+     * Local development server configuration
+     * Change these settings to match your local environment
+     */
+    const localDevConfig = {
+      port: 5500, // Default port for Live Server VSCode extension
+      host: "localhost",
+      protocol: "http",
+    };
+
+    /**
+     * Checks if the local development server is running
+     * @returns {Promise<boolean>} True if the server is running, false otherwise
+     */
+    async function isLocalServerRunning() {
+      if (!useLocalDevelopment) {
+        console.log("DBWay: Development mode is not enabled, using remote scripts");
+        return false;
+      }
+
+      console.log("DBWay: Development mode is enabled, checking for local server...");
+
+      // Create a more reliable way to test if the local server is running
+      const testUrl = `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/load.js`;
+
+      return new Promise((resolve) => {
+        // Use an image object for more reliable cross-origin detection
+        const img = new Image();
+
+        // Set a short timeout
+        const timeout = setTimeout(() => {
+          console.log("DBWay: Local server detection timed out, using remote scripts");
+          resolve(false);
+        }, 1000);
+
+        // If the image loads, the server is running
+        img.onload = () => {
+          clearTimeout(timeout);
+          console.log(
+            "DBWay: Local development server is running at",
+            `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/`
+          );
+          resolve(true);
+        };
+
+        // If there's an error loading the image, the server is not running
+        img.onerror = () => {
+          // This could mean the server is running but the file doesn't exist
+          // Let's try to fetch with XHR as a backup method
+          const xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              clearTimeout(timeout);
+              if (xhr.status >= 200 && xhr.status < 400) {
+                console.log("DBWay: Local development server is running (XHR method)");
+                resolve(true);
+              } else {
+                console.log("DBWay: Local development server is not running, using remote scripts");
+                resolve(false);
+              }
+            }
+          };
+
+          try {
+            xhr.open("HEAD", testUrl, true);
+            xhr.timeout = 800; // Shorter timeout for the backup method
+            xhr.send();
+          } catch (e) {
+            clearTimeout(timeout);
+            console.log("DBWay: Local development server is not running (XHR failed)");
+            resolve(false);
+          }
+        };
+
+        // Set the source to trigger the load/error
+        img.src = testUrl;
+      });
+    }
+
+    /**
      * Sequential script loader
      * Loads scripts in order to ensure dependencies are met
      */
-    (function () {
-      // Get the base URL for the scripts (current script's directory)
-      let scripts = document.getElementsByTagName("script");
-      let currentScript = scripts[scripts.length - 1];
-      let baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
+    (async function () {
+      // Determine which base URL to use
+      let baseUrl;
+      let isLocalMode = false;
 
-      let scriptFiles = [baseUrl + "tabs.js", baseUrl + "functions.js", baseUrl + "controls.js"];
+      try {
+        // Check if local server is running
+        isLocalMode = await isLocalServerRunning();
+
+        if (isLocalMode) {
+          baseUrl = `${localDevConfig.protocol}://${localDevConfig.host}:${localDevConfig.port}/`;
+          console.log("DBWay: Using local development server at", baseUrl);
+
+          // Add a timestamp to prevent caching in development mode
+          const timestamp = new Date().getTime();
+          console.log("DBWay: Adding cache-busting timestamp:", timestamp);
+        } else {
+          // Get the base URL for the scripts (current script's directory)
+          let scripts = document.getElementsByTagName("script");
+          let currentScript = scripts[scripts.length - 1];
+          baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
+          console.log("DBWay: Using remote scripts from", baseUrl);
+        }
+      } catch (error) {
+        // Fallback to current script's directory if there's an error
+        let scripts = document.getElementsByTagName("script");
+        let currentScript = scripts[scripts.length - 1];
+        baseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
+        console.log("DBWay: Error detecting environment, using remote scripts from", baseUrl);
+      }
+
+      // Define script files to load
+      let scriptFiles = ["tabs.js", "functions.js", "controls.js"];
+
+      // Add cache-busting for local development
+      if (isLocalMode) {
+        const timestamp = new Date().getTime();
+        scriptFiles = scriptFiles.map((file) => baseUrl + file + "?t=" + timestamp);
+      } else {
+        scriptFiles = scriptFiles.map((file) => baseUrl + file);
+      }
 
       /**
        * Recursively loads scripts in sequence
@@ -87,13 +242,18 @@ window.fsAttributes.push([
           let headTag = document.getElementsByTagName("head")[0];
           let scriptTag = document.createElement("script");
 
+          console.log("DBWay: Loading script:", nextLib);
+
           scriptTag.src = nextLib;
           scriptTag.onload = function (e) {
+            console.log("DBWay: Successfully loaded:", e.target.src);
+
             // Load the next script after this one is loaded
             loadScripts();
 
             // If this is the tabs script, initialize tabs immediately
             if (e.target.src.indexOf("tabs.js") > -1) {
+              console.log("DBWay: Tabs script loaded, initializing video container sizes");
               // Force adjustVideoContainerSizes to run after tabs are loaded
               setTimeout(function () {
                 adjustVideoContainerSizes();
@@ -103,8 +263,48 @@ window.fsAttributes.push([
 
           // Handle script load errors
           scriptTag.onerror = function (e) {
+            console.error("DBWay: Failed to load script:", nextLib);
+
+            // If we're in local mode and a script fails to load, try the remote version
+            if (isLocalMode && nextLib.includes(localDevConfig.host)) {
+              console.log("DBWay: Attempting to load remote version instead");
+
+              // Get the filename from the URL
+              const filename = nextLib.split("/").pop().split("?")[0];
+
+              // Get the remote script URL
+              let scripts = document.getElementsByTagName("script");
+              let currentScript = scripts[scripts.length - 1];
+              let remoteBaseUrl = currentScript.src.substring(0, currentScript.src.lastIndexOf("/") + 1);
+
+              // Create a new script tag for the remote version
+              let fallbackScript = document.createElement("script");
+              fallbackScript.src = remoteBaseUrl + filename;
+
+              fallbackScript.onload = function () {
+                console.log("DBWay: Successfully loaded remote fallback:", filename);
+                loadScripts();
+              };
+
+              fallbackScript.onerror = function () {
+                console.error("DBWay: Failed to load remote fallback:", filename);
+
+                // If tabs script fails to load, include its functionality inline
+                if (filename === "tabs.js") {
+                  console.log("DBWay: Using inline tabs functionality");
+                  initializeTabsFunctionality();
+                }
+
+                loadScripts();
+              };
+
+              headTag.appendChild(fallbackScript);
+              return;
+            }
+
             // If tabs script fails to load, include its functionality inline
             if (e.target.src.indexOf("tabs.js") > -1) {
+              console.log("DBWay: Using inline tabs functionality");
               initializeTabsFunctionality();
             }
 
@@ -113,6 +313,8 @@ window.fsAttributes.push([
           };
 
           headTag.appendChild(scriptTag);
+        } else {
+          console.log("DBWay: All scripts loaded successfully");
         }
       };
 
