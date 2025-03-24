@@ -162,7 +162,9 @@ function applySeasonClasses(seasonNumber) {
 
   // Add the appropriate season class
   const seasonClass = "s" + seasonNumber;
-  $("#hero-button, #find-button, .season-tab_link[data-tab='current']").addClass(seasonClass);
+  $("#hero-button, #find-button, .season-tab_link[data-tab='current'], .video_btn large-arrow.player-btn").addClass(
+    seasonClass
+  );
 }
 
 // Legacy function maintained for compatibility
