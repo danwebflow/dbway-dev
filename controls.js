@@ -819,14 +819,14 @@ jQuery(document).ready(function ($) {
                   });
                 }
 
-                // Set English as default if available
-                const englishOption = player.querySelector(
-                  "#caption-scroll [name='caption-language-selector'][lang='en']"
+                // Set Disabled as default
+                const disabledOption = player.querySelector(
+                  "#caption-scroll [name='caption-language-selector'][lang='']"
                 );
-                if (englishOption) {
-                  lang = "en";
-                  $(englishOption).trigger("click");
-                  englishOption.previousElementSibling.classList.add("w--redirected-checked");
+                if (disabledOption) {
+                  lang = "Disabled";
+                  $(disabledOption).trigger("click");
+                  disabledOption.previousElementSibling.classList.add("w--redirected-checked");
                 }
               }
               // For Season 2, initialize language selection with all options
@@ -1194,10 +1194,11 @@ jQuery(document).ready(function ($) {
             elem.removeAttribute("default");
           });
 
+          // Ensure all text tracks are disabled by default
           for (let i = 0; i < video.textTracks.length; i++) {
             const track = video.textTracks[i];
             track.kind = "subtitles";
-            track.mode = "hidden";
+            track.mode = "disabled"; // Change from "hidden" to "disabled"
           }
 
           function checkCaptionBar() {
@@ -1223,7 +1224,8 @@ jQuery(document).ready(function ($) {
           }
 
           function selectLanguageCaption() {
-            lang = lang === undefined ? "Disabled" : lang;
+            // Always default to disabled captions
+            lang = "Disabled";
             let languageRadio = player.querySelector(`#caption-scroll [name='caption-language-selector']#${lang}`);
             if (languageRadio && !$(languageRadio.previousElementSibling).hasClass("w--redirected-checked")) {
               $(languageRadio).trigger("click");
@@ -1237,10 +1239,10 @@ jQuery(document).ready(function ($) {
               lang = e.target.lang || "Disabled";
             }
             for (let i = 0; i < video.textTracks.length; i++) {
-              if (video.textTracks[i].language === lang) {
+              if (video.textTracks[i].language === lang && lang !== "") {
                 video.textTracks[i].mode = "showing";
               } else {
-                video.textTracks[i].mode = "hidden";
+                video.textTracks[i].mode = "disabled"; // Change from "hidden" to "disabled"
               }
             }
             if (e.target.lang == "") {
@@ -1289,7 +1291,15 @@ jQuery(document).ready(function ($) {
         videoTap.addEventListener("click", showControls);
         video.addEventListener("play", updatePlayButton);
         video.addEventListener("pause", updatePlayButton);
-        video.addEventListener("loadedmetadata", initializeVideo);
+        video.addEventListener("loadedmetadata", function () {
+          // Ensure all text tracks are disabled by default
+          if (video.textTracks) {
+            for (let i = 0; i < video.textTracks.length; i++) {
+              video.textTracks[i].mode = "disabled";
+            }
+          }
+          initializeVideo();
+        });
         video.addEventListener("timeupdate", updateTimeElapsed);
         video.addEventListener("timeupdate", updateProgress);
         video.addEventListener("volumechange", updateVolumeIcon);

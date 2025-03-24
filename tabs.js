@@ -158,13 +158,24 @@ $(".season-tab_link").on("click", function (e) {
 // Function to immediately apply season-specific CSS classes
 function applySeasonClasses(seasonNumber) {
   // Remove all season classes from buttons (using direct DOM manipulation for speed)
-  $("#hero-button, #find-button, .season-tab_link").removeClass("s1 s2 s3");
+  $("#hero-button, #find-button, .season-tab_link, .video_btn.large-arrow.player-btn").removeClass("s1 s2 s3");
 
   // Add the appropriate season class
   const seasonClass = "s" + seasonNumber;
-  $("#hero-button, #find-button, .season-tab_link[data-tab='current'], .video_btn large-arrow.player-btn").addClass(
-    seasonClass
-  );
+
+  // Add class to standard buttons
+  $("#hero-button, #find-button, .season-tab_link[data-tab='current']").addClass(seasonClass);
+
+  // Add class to player buttons - with a slight delay to ensure DOM is updated
+  setTimeout(function () {
+    $(".player-item.active .video_btn.large-arrow.player-btn").addClass(seasonClass);
+
+    // If no player item is active, add class to the first one
+    if (!$(".player-item.active").length && $(".player-item").length) {
+      $(".player-item").first().addClass("active");
+      $(".player-item.active .video_btn.large-arrow.player-btn").addClass(seasonClass);
+    }
+  }, 50);
 }
 
 // Legacy function maintained for compatibility
@@ -257,6 +268,15 @@ function updateTab() {
     // Immediately apply season-specific CSS classes
     applySeasonClasses(seasonNumber);
 
+    // Directly apply season class to player buttons
+    $(".video_btn.large-arrow.player-btn").removeClass("s1 s2 s3");
+    $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + seasonNumber);
+
+    // Call again after a short delay to ensure it works
+    setTimeout(function () {
+      $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + seasonNumber);
+    }, 100);
+
     // Pause all videos
     $(".player-item video").each(function () {
       this.pause(); // Direct DOM access is faster than jQuery's get(0).pause()
@@ -329,6 +349,40 @@ $(document).ready(function () {
 
   // Initialize the first tab
   updateTab();
+
+  // Directly apply season classes to player buttons
+  const seasonNumber = parseInt($("body").attr("data-current-season")) || 1;
+  $(".video_btn.large-arrow.player-btn").removeClass("s1 s2 s3");
+  $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + seasonNumber);
+
+  // If no player item is active, activate the first one
+  if (!$(".player-item.active").length && $(".player-item").length) {
+    $(".player-item").first().addClass("active");
+    $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + seasonNumber);
+  }
+
+  // Add event handler for player item activation
+  $(document).on("click", ".player-item", function () {
+    // Get the current season number
+    const seasonNumber = parseInt($("body").attr("data-current-season")) || 1;
+
+    // Remove active class from all player items
+    $(".player-item").removeClass("active");
+
+    // Add active class to this player item
+    $(this).addClass("active");
+
+    // Update the season class on the player button
+    $(".player-item.active .video_btn.large-arrow.player-btn")
+      .removeClass("s1 s2 s3")
+      .addClass("s" + seasonNumber);
+  });
+
+  // Call again after a short delay to ensure it works
+  setTimeout(function () {
+    const seasonNumber = parseInt($("body").attr("data-current-season")) || 1;
+    $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + seasonNumber);
+  }, 500);
 });
 
 // CHANGE HERO VIDEO SOURCE

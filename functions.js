@@ -186,6 +186,14 @@ function videoplay(videoID) {
       jQuery(".player-item").removeClass("active playing");
       video.addClass("playing active");
 
+      // Get the current season number
+      const seasonNumber = parseInt(jQuery("body").attr("data-current-season")) || 1;
+
+      // Update the season class on the player button
+      jQuery(".player-item.active .video_btn.large-arrow.player-btn")
+        .removeClass("s1 s2 s3")
+        .addClass("s" + seasonNumber);
+
       // Play the video if it exists
       if (videoPlr) {
         try {

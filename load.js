@@ -62,14 +62,91 @@ window.addEventListener("DOMContentLoaded", () => {
   $(".season-tab_content-panel").eq(1).attr("data-season", "2");
   $(".season-tab_content-panel").eq(2).attr("data-season", "3");
 
-  // Handle responsive video container sizing
+  // Function to update player button classes based on active season
+  function updatePlayerButtonClasses() {
+    // Remove all season classes first from all player buttons
+    $(".video_btn.large-arrow.player-btn").removeClass("s1 s2 s3");
+
+    // Find the active season
+    let activeSeason = 1; // Default to season 1
+
+    // First check body data attribute (most reliable)
+    if ($("body").attr("data-current-season")) {
+      activeSeason = parseInt($("body").attr("data-current-season"));
+    }
+    // Then check which season tab is active
+    else if ($(".season-tab_link.w--current").length) {
+      const activeTab = $(".season-tab_link.w--current");
+      if (activeTab.hasClass("is-season-2") || activeTab.attr("data-season") === "2") {
+        activeSeason = 2;
+      } else if (activeTab.hasClass("is-season-3") || activeTab.attr("data-season") === "3") {
+        activeSeason = 3;
+      }
+    } else {
+      // If no tab is active, check which panel is visible or has active class
+      if ($(".season-tab_content-panel.active").length) {
+        const activePanel = $(".season-tab_content-panel.active");
+        if (activePanel.attr("data-season")) {
+          activeSeason = parseInt(activePanel.attr("data-season"));
+        } else {
+          activeSeason = activePanel.index() + 1;
+        }
+      } else {
+        // Last resort: check which panel is visible
+        $(".season-tab_content-panel").each(function (index) {
+          if ($(this).is(":visible")) {
+            activeSeason = index + 1;
+            return false; // Break the loop
+          }
+        });
+      }
+    }
+
+    // Store the season number on the body for future reference
+    $("body").attr("data-current-season", activeSeason);
+
+    // Add the appropriate season class to all player buttons in active items
+    $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + activeSeason);
+
+    // If no player item is active, add class to the first one
+    if (!$(".player-item.active").length && $(".player-item").length) {
+      $(".player-item").first().addClass("active");
+      $(".player-item.active .video_btn.large-arrow.player-btn").addClass("s" + activeSeason);
+    }
+  }
+
+  // Run on page load
   jQuery(function () {
     adjustVideoContainerSizes();
+    // Call immediately and then again after a short delay to ensure it works
+    updatePlayerButtonClasses();
+    setTimeout(updatePlayerButtonClasses, 500);
   });
 
   // Re-adjust sizes on window resize
   jQuery(window).on("resize", function () {
     adjustVideoContainerSizes();
+  });
+
+  // Update player button classes when season changes
+  $(".season-tab_link").on("click", function () {
+    // Call immediately and then again after a short delay
+    updatePlayerButtonClasses();
+    setTimeout(updatePlayerButtonClasses, 100);
+    // And once more after DOM is fully updated
+    setTimeout(updatePlayerButtonClasses, 500);
+  });
+
+  // Also update when a player item becomes active
+  $(document).on("click", ".player-item", function () {
+    // Call immediately and then again after a short delay
+    updatePlayerButtonClasses();
+    setTimeout(updatePlayerButtonClasses, 100);
+  });
+
+  // Force update after DOM is fully loaded
+  $(window).on("load", function () {
+    updatePlayerButtonClasses();
   });
 });
 
