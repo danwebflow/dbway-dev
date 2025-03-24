@@ -159,13 +159,6 @@ window.fsAttributes.push([
             let getIndex = current.index();
 
             if (current) {
-              if (getIndex === 0) {
-                $("#heroBtn").text("Season 1");
-              } else if (getIndex === 1) {
-                $("#heroBtn").text("Season 2");
-              } else if (getIndex === 2) {
-                $("#heroBtn").text("Season 3");
-              }
               // Pause video
               $(".player-item video").each(function () {
                 $(this).get(0).pause();
@@ -285,6 +278,38 @@ function initCSSMarquee() {
       list.style.animationPlayState = "paused";
     });
     observer.observe(marquee);
+  });
+
+  // Add hover pause functionality for marquee items
+  const marqueeItems = document.querySelectorAll(".marquee-css__item");
+  marqueeItems.forEach((item) => {
+    // Pause animation on hover
+    item.addEventListener("mouseenter", function () {
+      const parentMarquee = this.closest("[data-css-marquee]");
+      if (parentMarquee) {
+        parentMarquee.querySelectorAll("[data-css-marquee-list]").forEach((list) => {
+          list.style.animationPlayState = "paused";
+        });
+      }
+    });
+
+    // Resume animation when hover ends
+    item.addEventListener("mouseleave", function () {
+      const parentMarquee = this.closest("[data-css-marquee]");
+      if (parentMarquee) {
+        // Check if the marquee is in view before resuming
+        const isInView = Array.from(observer.takeRecords()).find(
+          (record) => record.target === parentMarquee
+        )?.isIntersecting;
+
+        // Only resume if the marquee is in view
+        if (isInView !== false) {
+          parentMarquee.querySelectorAll("[data-css-marquee-list]").forEach((list) => {
+            list.style.animationPlayState = "running";
+          });
+        }
+      }
+    });
   });
 }
 
