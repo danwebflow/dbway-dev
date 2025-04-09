@@ -505,7 +505,7 @@ jQuery(document).ready(function ($) {
 // Note: The Javascript is optional. Read the documentation below how to use the CSS Only version.
 
 function initCSSMarquee() {
-  const pixelsPerSecond = 75; // Set the marquee speed (pixels per second)
+  const pixelsPerSecond = 115; // Set the marquee speed (pixels per second)
   const marquees = document.querySelectorAll("[data-css-marquee]");
 
   // Duplicate each [data-css-marquee-list] element inside its container
