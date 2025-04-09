@@ -537,9 +537,9 @@ function initCSSMarquee() {
     observer.observe(marquee);
   });
 
-  // Add hover pause functionality for marquee items
-  const marqueeItems = document.querySelectorAll(".marquee-css__item");
-  marqueeItems.forEach((item) => {
+  // Add hover pause functionality for .db-display elements
+  const dbDisplayItems = document.querySelectorAll(".db-display");
+  dbDisplayItems.forEach((item) => {
     // Pause animation on hover
     item.addEventListener("mouseenter", function () {
       const parentMarquee = this.closest("[data-css-marquee]");
